@@ -1,0 +1,116 @@
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  skip-dirs:
+    - test/fixtures
+    - vendor
+  skip-files:
+    - ".*\\.pb\\.go$"
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  
+  govet:
+    check-shadowing: true
+    enable-all: true
+  
+  gofmt:
+    simplify: true
+  
+  goimports:
+    local-prefixes: github.com/rowbotony/vultool
+  
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  
+  misspell:
+    locale: US
+  
+  nakedret:
+    max-func-lines: 30
+  
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: false
+  
+  gocritic:
+    enabled-tags:
+      - performance
+      - style
+      - experimental
+      - diagnostic
+    disabled-checks:
+      - wrapperFunc
+      - dupImport
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - goimports
+    - goconst
+    - misspell
+    - nakedret
+    - prealloc
+    - gocritic
+    - gocyclo
+    - gosec
+  
+  disable:
+    - varcheck    # deprecated
+    - structcheck # deprecated  
+    - deadcode    # deprecated
+    - maligned    # deprecated
+    - golint      # deprecated
+    - interfacer  # deprecated
+    - scopelint   # deprecated
+
+issues:
+  exclude-use-default: false
+  exclude:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+    
+    # Exclude known linter issues
+    - text: "weak cryptographic primitive"
+      linters:
+        - gosec
+    
+    - text: "Use of weak random number generator"
+      linters:
+        - gosec
+  
+  exclude-rules:
+    - path: cmd/
+      linters:
+        - gocyclo
+    
+    - path: internal/vault/parser\.go
+      text: "cyclomatic complexity"
+      linters:
+        - gocyclo
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false

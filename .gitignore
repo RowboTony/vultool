@@ -1,0 +1,83 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vultool
+vultool.exe
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+*.prof
+coverage.out
+coverage.html
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Build artifacts
+dist/
+build/
+
+# CGO and FFI build artifacts
+*.h
+*.a
+*.o
+ffi
+ffi.h
+
+# WASM build artifacts
+*.wasm
+
+# Cross-platform binaries
+vultool-*
+
+# Release artifacts
+*.tar.gz
+*.zip
+*.sha256
+
+# Security scan reports
+gosec-report.json
+vuln-report.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Private documentation (not for public repo)
+docs/private/
+*.private.md
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Debug files
+debug
+__debug_bin*

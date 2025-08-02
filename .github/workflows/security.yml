@@ -1,0 +1,215 @@
+name: Security
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/security.yml'
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-22.04
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+        cache-dependency-path: go.sum
+    
+    - name: Download dependencies
+      run: |
+        go mod download
+        go mod verify
+    
+    - name: Run gosec Security Scanner
+      uses: securecodewarrior/github-action-gosec@master
+      with:
+        args: '-fmt sarif -out gosec.sarif -stdout -verbose=text ./...'
+    
+    - name: Upload gosec SARIF file
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: gosec.sarif
+        category: gosec
+    
+    - name: Run govulncheck
+      id: govulncheck
+      run: |
+        go install golang.org/x/vuln/cmd/govulncheck@latest
+        echo "Running govulncheck..."
+        govulncheck -json ./... > govulncheck.json || true
+        
+        # Check if vulnerabilities were found
+        if [ -s govulncheck.json ]; then
+          echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
+          echo "Vulnerabilities found in govulncheck scan"
+        else
+          echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+          echo "No vulnerabilities found in govulncheck scan"
+        fi
+    
+    - name: Upload govulncheck results
+      uses: actions/upload-artifact@v4
+      with:
+        name: govulncheck-results-${{ github.run_number }}
+        path: |
+          govulncheck.json
+          gosec.sarif
+        retention-days: 90
+    
+    - name: Process vulnerability results
+      if: always()
+      run: |
+        echo "=== Security Scan Summary ==="
+        
+        # Process gosec results
+        if [ -f gosec.sarif ]; then
+          echo "📊 gosec scan completed"
+          # Count issues in SARIF file
+          if command -v jq >/dev/null 2>&1; then
+            GOSEC_ISSUES=$(jq '.runs[0].results | length' gosec.sarif 2>/dev/null || echo "0")
+            echo "📋 gosec found: $GOSEC_ISSUES issues"
+          fi
+        else
+          echo "⚠️  gosec results not found"
+        fi
+        
+        # Process govulncheck results
+        if [ -f govulncheck.json ]; then
+          echo "📊 govulncheck scan completed"
+          if [ "${{ steps.govulncheck.outputs.has_vulnerabilities }}" = "true" ]; then
+            echo "🚨 Vulnerabilities detected!"
+            # Show summary if jq is available
+            if command -v jq >/dev/null 2>&1; then
+              echo "Vulnerability details:"
+              jq -r '.vulns[]? | "- \(.id): \(.details)"' govulncheck.json 2>/dev/null || cat govulncheck.json
+            else
+              echo "Raw govulncheck output:"
+              cat govulncheck.json
+            fi
+          else
+            echo "✅ No vulnerabilities found"
+          fi
+        else
+          echo "⚠️  govulncheck results not found"
+        fi
+    
+    - name: Fail on critical vulnerabilities
+      if: steps.govulncheck.outputs.has_vulnerabilities == 'true'
+      run: |
+        echo "🚨 Critical vulnerabilities found in dependencies!"
+        echo "Please review the govulncheck results and update affected dependencies."
+        echo "For manual review: https://pkg.go.dev/vuln/"
+        exit 1
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+        allow-licenses: Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC
+        deny-licenses: GPL-2.0, GPL-3.0, LGPL-2.0, LGPL-2.1, LGPL-3.0
+        comment-summary-in-pr: always
+
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-22.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'go' ]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        config-file: ./.github/codeql/codeql-config.yml
+        queries: security-and-quality
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+    
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-22.04
+    needs: [security-scan, codeql-analysis]
+    if: always()
+    permissions:
+      security-events: read
+      contents: read
+    steps:
+    - name: Security scan summary
+      run: |
+        echo "=== Daily Security Scan Summary ==="
+        echo "📅 Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo "🔍 Scans performed:"
+        echo "  - gosec: Static security analysis"
+        echo "  - govulncheck: Vulnerability database check"  
+        echo "  - CodeQL: Advanced semantic analysis"
+        echo ""
+        
+        if [[ "${{ needs.security-scan.result }}" == "success" ]]; then
+          echo "✅ Security scan: PASSED"
+        else
+          echo "❌ Security scan: FAILED"
+        fi
+        
+        if [[ "${{ needs.codeql-analysis.result }}" == "success" ]]; then
+          echo "✅ CodeQL analysis: PASSED"
+        else
+          echo "❌ CodeQL analysis: FAILED"
+        fi
+        
+        echo ""
+        echo "📊 View detailed results in the Security tab of this repository"
+        echo "🔗 https://github.com/${{ github.repository }}/security"

@@ -1,0 +1,259 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  build:
+    name: Build Release Binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-22.04
+            goos: linux
+            goarch: arm64
+          - os: macos-13
+            goos: darwin
+            goarch: amd64
+          - os: macos-13
+            goos: darwin
+            goarch: arm64
+          - os: windows-2022
+            goos: windows
+            goarch: amd64
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+        cache-dependency-path: go.sum
+    
+    - name: Get version
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.tag }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/}
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
+        echo "Building version: ${VERSION}"
+    
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        BINARY_NAME="vultool-${{ steps.get_version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        
+        echo "Building ${BINARY_NAME}..."
+        go build \
+          -ldflags "-X main.version=${{ steps.get_version.outputs.version }} -s -w -extldflags '-static'" \
+          -a -installsuffix cgo \
+          -trimpath \
+          -o ${BINARY_NAME} \
+          ./cmd/vultool
+        
+        # Log build info
+        ls -lh ${BINARY_NAME}
+        file ${BINARY_NAME} || true
+    
+    - name: Test binary (native only)
+      if: (matrix.goos == 'linux' && matrix.os == 'ubuntu-22.04' && matrix.goarch == 'amd64') || (matrix.goos == 'darwin' && matrix.os == 'macos-13' && matrix.goarch == 'amd64') || (matrix.goos == 'windows' && matrix.os == 'windows-2022')
+      run: |
+        BINARY_NAME="vultool-${{ steps.get_version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        
+        echo "Testing ${BINARY_NAME}..."
+        ./${BINARY_NAME} --version
+        ./${BINARY_NAME} --help
+        echo "Binary test successful!"
+    
+    - name: Generate checksum
+      run: |
+        BINARY_NAME="vultool-${{ steps.get_version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        
+        if command -v sha256sum >/dev/null 2>&1; then
+          sha256sum ${BINARY_NAME} > ${BINARY_NAME}.sha256
+        else
+          shasum -a 256 ${BINARY_NAME} > ${BINARY_NAME}.sha256
+        fi
+        
+        echo "Checksum for ${BINARY_NAME}:"
+        cat ${BINARY_NAME}.sha256
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: vultool-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: |
+          vultool-*
+          *.sha256
+        retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        merge-multiple: true
+    
+    - name: Get version
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.tag }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/}
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Creating release for version: ${VERSION}"
+    
+    - name: Prepare release files
+      run: |
+        mkdir -p release
+        
+        # Move all binaries and checksums to release directory
+        find artifacts -name "vultool-*" -type f -exec cp {} release/ \;
+        
+        # List all files
+        echo "Release files:"
+        ls -la release/
+        
+        # Create combined checksums file
+        cd release
+        if ls *.sha256 1> /dev/null 2>&1; then
+          echo "Creating combined checksums file..."
+          cat *.sha256 > vultool-${{ steps.get_version.outputs.version }}-checksums.txt
+          rm *.sha256
+          echo "Combined checksums:"
+          cat vultool-${{ steps.get_version.outputs.version }}-checksums.txt
+        else
+          echo "Warning: No checksum files found"
+        fi
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION=${{ steps.get_version.outputs.version }}
+        
+        if [ -f CHANGELOG.md ]; then
+          echo "Extracting release notes from CHANGELOG.md..."
+          # Extract release notes from CHANGELOG
+          awk "/^## \[${VERSION#v}\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > release_notes.md
+          
+          if [ ! -s release_notes.md ]; then
+            echo "No release notes found in CHANGELOG.md for ${VERSION}"
+            echo "## Changes in ${VERSION}" > release_notes.md
+            echo "" >> release_notes.md
+            echo "See commit history for detailed changes." >> release_notes.md
+          fi
+        else
+          echo "Generating release notes from git log..."
+          echo "## Changes in ${VERSION}" > release_notes.md
+          echo "" >> release_notes.md
+          
+          # Get previous tag for comparison
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "### Commits since ${PREV_TAG}:" >> release_notes.md
+            echo "" >> release_notes.md
+            git log --pretty=format:"- %s (%h)" ${PREV_TAG}..HEAD >> release_notes.md
+          else
+            echo "- Initial release" >> release_notes.md
+          fi
+        fi
+        
+        # Add download instructions
+        echo "" >> release_notes.md
+        echo "## Installation" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Download Pre-built Binaries" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "Choose the appropriate binary for your platform:" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "- **Linux (amd64)**: \`vultool-${VERSION}-linux-amd64\`" >> release_notes.md
+        echo "- **Linux (arm64)**: \`vultool-${VERSION}-linux-arm64\`" >> release_notes.md
+        echo "- **macOS (amd64)**: \`vultool-${VERSION}-darwin-amd64\`" >> release_notes.md
+        echo "- **macOS (arm64)**: \`vultool-${VERSION}-darwin-arm64\`" >> release_notes.md
+        echo "- **Windows (amd64)**: \`vultool-${VERSION}-windows-amd64.exe\`" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "### Verify Download" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "All binaries are provided with SHA256 checksums in \`vultool-${VERSION}-checksums.txt\`." >> release_notes.md
+        echo "" >> release_notes.md
+        echo "\`\`\`bash" >> release_notes.md
+        echo "# Verify checksum (Linux/macOS)" >> release_notes.md
+        echo "sha256sum -c vultool-${VERSION}-checksums.txt" >> release_notes.md
+        echo "\`\`\`" >> release_notes.md
+        
+        echo "Generated release notes:"
+        cat release_notes.md
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        name: Release ${{ steps.get_version.outputs.version }}
+        body_path: release_notes.md
+        files: release/*
+        draft: false
+        prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update latest release
+      if: ${{ !contains(steps.get_version.outputs.version, '-') }}
+      run: |
+        echo "✅ Release ${{ steps.get_version.outputs.version }} created successfully!"
+        echo "📦 Binaries available for: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64)"
+        echo "🔗 Release URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ steps.get_version.outputs.version }}"

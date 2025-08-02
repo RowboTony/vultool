@@ -1,0 +1,16 @@
+{
+  "severity": "medium",
+  "confidence": "medium",
+  "exclude-generated": true,
+  "exclude-dirs": ["test/fixtures", "vendor", ".git"],
+  "tests": true,
+  "exclude-rules": [],
+  "global": {
+    "nosec": false,
+    "audit": true
+  },
+  "output": {
+    "format": "sarif",
+    "stdout": true
+  }
+}
