@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/rowbotony/vultool/workflows/CI/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/ci.yml)
 [![Security](https://github.com/rowbotony/vultool/workflows/Security/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/security.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rowbotony/vultool)](https://goreportcard.com/report/github.com/rowbotony/vultool)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/rowbotony/vultool)](https://github.com/rowbotony/vultool/blob/main/go.mod)
 [![Release](https://img.shields.io/github/v/release/rowbotony/vultool)](https://github.com/rowbotony/vultool/releases/latest)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
@@ -225,7 +225,7 @@ make validate      # Test fixture validation (handles encrypted files automatica
 echo "1.0.0" > VERSION && git tag v1.0.0 && git push --tags
 ```
 
-**New in v0.0.9:** CI pipeline now handles encrypted test fixtures automatically without hanging, ensuring reliable automated builds and deployments.
+**New in v0.1.0:** CI pipeline now handles encrypted test fixtures automatically without hanging, ensuring reliable automated builds and deployments.
 
 See [`docs/CI-CD.md`](docs/CI-CD.md) for details.
 
@@ -235,7 +235,7 @@ Vultool was extracted from the vulticore project to provide a focused, standalon
 
 ```go
 // In vulticore/go.mod
-require github.com/rowbotony/vultool v0.0.9-dev
+require github.com/rowbotony/vultool v0.1.0-dev
 
 // For local development:
 replace github.com/rowbotony/vultool => ../vultool

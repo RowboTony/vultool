@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.1.0-dev] - 2025-08-03
+
+### Added
+
+* **diff command:** Compare two vault files with colored, field-by-field analysis (supports encrypted vaults)
+* **decode YAML support:** Output YAML with `--yaml` flag (alongside JSON)
+* **info, decode, verify aliases:** Shortcuts for quick CLI usage
+* **First-run welcome message:** Notifies user on successful install
+
+### Improved
+
+* CI/CD reliability: Automated pipelines now run with no manual intervention
+* Security: All lint, gosec, and error handling warnings fixed; explicit #nosec annotations added
+* CLI UX: Consistent command patterns and help text across all aliases
+* Badge accuracy: Replaced Go Report Card with Go version badge in README
+
+### Technical
+
+* Full backward compatibility maintained with previous CLI versions
+* Updated to Go 1.23, modernized golangci-lint config
+* Enhanced Makefile and test fixtures for CI and cross-platform support
+
 ## [v0.0.9-dev] - 2025-08-03
 
 ### Added
