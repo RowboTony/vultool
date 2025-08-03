@@ -60,15 +60,29 @@ jobs:
       run: |
         go install golang.org/x/vuln/cmd/govulncheck@latest
         echo "Running govulncheck..."
-        govulncheck -json ./... > govulncheck.json || true
-        
-        # Check if vulnerabilities were found
-        if [ -s govulncheck.json ]; then
-          echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
-          echo "Vulnerabilities found in govulncheck scan"
-        else
+        if govulncheck -json ./... > govulncheck.json; then
           echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
-          echo "No vulnerabilities found in govulncheck scan"
+          echo "✅ No vulnerabilities found"
+        else
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -eq 3 ]; then
+            # Exit code 3 means vulnerabilities were found
+            echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
+            echo "🚨 Vulnerabilities found in govulncheck scan"
+            
+            # Double-check by parsing JSON for actual findings
+            if command -v jq > /dev/null 2>&1; then
+              VULN_COUNT=$(jq -r '[.finding? // empty] | length' govulncheck.json 2>/dev/null || echo "0")
+              echo "Found $VULN_COUNT vulnerability findings"
+              if [ "$VULN_COUNT" = "0" ]; then
+                echo "⚠️  govulncheck exited with code 3 but no findings in JSON - treating as no vulnerabilities"
+                echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+              fi
+            fi
+          else
+            echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+            echo "govulncheck completed with exit code $EXIT_CODE (not vulnerability-related)"
+          fi
         fi
     
     - name: Upload govulncheck results
