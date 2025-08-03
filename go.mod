@@ -5,7 +5,6 @@ go 1.23.0
 toolchain go1.23.4
 
 require (
-	github.com/golang/protobuf v1.5.3
 	github.com/spf13/cobra v1.8.0
 	github.com/vultisig/commondata v0.0.0-20241001024659-50cb6f1ca345
 	golang.org/x/term v0.30.0
