@@ -83,7 +83,7 @@ linters:
 
 issues:
   exclude-use-default: false
-  exclude:
+  exclude-rules:
     # Exclude some linters from running on tests files
     - path: _test\.go
       linters:
@@ -100,8 +100,8 @@ issues:
     - text: "Use of weak random number generator"
       linters:
         - gosec
-  
-  exclude-rules:
+    
+    # Exclude complexity issues for main commands
     - path: cmd/
       linters:
         - gocyclo

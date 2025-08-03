@@ -15,25 +15,26 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/golang/protobuf/proto"
 	v1 "github.com/vultisig/commondata/go/vultisig/vault/v1"
 	"golang.org/x/term"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // VaultInfo contains parsed vault information
+// Fields are ordered for optimal memory alignment (largest to smallest)
 type VaultInfo struct {
-	Name           string              `json:"name"`
-	PublicKeyECDSA string              `json:"public_key_ecdsa"`
-	PublicKeyEDDSA string              `json:"public_key_eddsa"`
-	HexChainCode   string              `json:"hex_chain_code"`
-	LocalPartyKey  string              `json:"local_party_key"`
-	IsEncrypted    bool                `json:"is_encrypted"`
-	Version        int32               `json:"version"`
-	KeyShares      []KeyShareInfo      `json:"key_shares,omitempty"`
-	Metadata       map[string]string   `json:"metadata,omitempty"`
-	CreatedAt      int64               `json:"created_at,omitempty"`
-	FilePath       string              `json:"file_path"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+	Name           string            `json:"name"`
+	PublicKeyECDSA string            `json:"public_key_ecdsa"`
+	PublicKeyEDDSA string            `json:"public_key_eddsa"`
+	HexChainCode   string            `json:"hex_chain_code"`
+	LocalPartyKey  string            `json:"local_party_key"`
+	FilePath       string            `json:"file_path"`
+	KeyShares      []KeyShareInfo    `json:"key_shares,omitempty"`
+	CreatedAt      int64             `json:"created_at,omitempty"`
+	Version        int32             `json:"version"`
+	IsEncrypted    bool              `json:"is_encrypted"`
 }
 
 // KeyShareInfo contains information about a key share
@@ -58,16 +59,17 @@ func ParseVaultFileWithPassword(filePath, password string) (*VaultInfo, error) {
 	}
 
 	// Check if file exists
-	if _, err := os.Stat(absPath); err != nil {
-		return nil, fmt.Errorf("error accessing file %s: %w", absPath, err)
+	if _, statErr := os.Stat(absPath); statErr != nil {
+		return nil, fmt.Errorf("error accessing file %s: %w", absPath, statErr)
 	}
 
 	// Validate file path for security
-	if err := validateSafePath(absPath); err != nil {
-		return nil, fmt.Errorf("unsafe file path: %w", err)
+	if validateErr := validateSafePath(absPath); validateErr != nil {
+		return nil, fmt.Errorf("unsafe file path: %w", validateErr)
 	}
 
 	// Read file content
+	// #nosec G304 - absPath is validated by validateSafePath above
 	fileContent, err := os.ReadFile(absPath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)
@@ -81,8 +83,8 @@ func ParseVaultFileWithPassword(filePath, password string) (*VaultInfo, error) {
 
 	// Unmarshal vault container
 	var vaultContainer v1.VaultContainer
-	if err := proto.Unmarshal(rawContent, &vaultContainer); err != nil {
-		return nil, fmt.Errorf("error unmarshalling vault container: %w", err)
+	if unmarshalErr := proto.Unmarshal(rawContent, &vaultContainer); unmarshalErr != nil {
+		return nil, fmt.Errorf("error unmarshalling vault container: %w", unmarshalErr)
 	}
 
 	// Handle encrypted vs unencrypted vaults
@@ -93,13 +95,13 @@ func ParseVaultFileWithPassword(filePath, password string) (*VaultInfo, error) {
 			return nil, fmt.Errorf("error decrypting vault: %w", err)
 		}
 	} else {
-		vaultData, err := base64.StdEncoding.DecodeString(vaultContainer.Vault)
-		if err != nil {
-			return nil, fmt.Errorf("error decoding vault data: %w", err)
+		vaultData, decodeErr := base64.StdEncoding.DecodeString(vaultContainer.Vault)
+		if decodeErr != nil {
+			return nil, fmt.Errorf("error decoding vault data: %w", decodeErr)
 		}
 		vault = &v1.Vault{}
-		if err := proto.Unmarshal(vaultData, vault); err != nil {
-			return nil, fmt.Errorf("error unmarshalling vault: %w", err)
+		if unmarshalErr := proto.Unmarshal(vaultData, vault); unmarshalErr != nil {
+			return nil, fmt.Errorf("error unmarshalling vault: %w", unmarshalErr)
 		}
 	}
 
@@ -130,11 +132,6 @@ func ParseVaultFileWithPassword(filePath, password string) (*VaultInfo, error) {
 	}
 
 	return vaultInfo, nil
-}
-
-// decryptVault decrypts an encrypted vault using interactive password prompt
-func decryptVault(container *v1.VaultContainer, filePath string) (*v1.Vault, error) {
-	return decryptVaultWithPassword(container, filePath, "")
 }
 
 // decryptVaultWithPassword decrypts an encrypted vault with optional password parameter
@@ -169,8 +166,8 @@ func decryptVaultWithPassword(container *v1.VaultContainer, filePath, password s
 
 	// Unmarshal decrypted vault
 	var vault v1.Vault
-	if err := proto.Unmarshal(decryptedData, &vault); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal decrypted vault: %w", err)
+	if unmarshalErr := proto.Unmarshal(decryptedData, &vault); unmarshalErr != nil {
+		return nil, fmt.Errorf("failed to unmarshal decrypted vault: %w", unmarshalErr)
 	}
 
 	return &vault, nil
@@ -313,8 +310,8 @@ func ParseVaultContentDirect(content, fileName string) (*VaultInfo, error) {
 
 	// Unmarshal vault container
 	var vaultContainer v1.VaultContainer
-	if err := proto.Unmarshal(rawContent, &vaultContainer); err != nil {
-		return nil, fmt.Errorf("error unmarshalling vault container: %w", err)
+	if unmarshalErr := proto.Unmarshal(rawContent, &vaultContainer); unmarshalErr != nil {
+		return nil, fmt.Errorf("error unmarshalling vault container: %w", unmarshalErr)
 	}
 
 	// Handle encrypted vs unencrypted vaults
@@ -324,13 +321,13 @@ func ParseVaultContentDirect(content, fileName string) (*VaultInfo, error) {
 		// For now, return an error for encrypted vaults
 		return nil, fmt.Errorf("encrypted vaults not supported in direct parsing mode")
 	} else {
-		vaultData, err := base64.StdEncoding.DecodeString(vaultContainer.Vault)
-		if err != nil {
-			return nil, fmt.Errorf("error decoding vault data: %w", err)
+		vaultData, decodeErr := base64.StdEncoding.DecodeString(vaultContainer.Vault)
+		if decodeErr != nil {
+			return nil, fmt.Errorf("error decoding vault data: %w", decodeErr)
 		}
 		vault = &v1.Vault{}
-		if err := proto.Unmarshal(vaultData, vault); err != nil {
-			return nil, fmt.Errorf("error unmarshalling vault: %w", err)
+		if unmarshalErr := proto.Unmarshal(vaultData, vault); unmarshalErr != nil {
+			return nil, fmt.Errorf("error unmarshalling vault: %w", unmarshalErr)
 		}
 	}
 
@@ -386,8 +383,8 @@ func IsValidVultFile(content string) (bool, error) {
 
 	// Step 3: Check if it's a valid protobuf VaultContainer
 	var vaultContainer v1.VaultContainer
-	if err := proto.Unmarshal(rawContent, &vaultContainer); err != nil {
-		return false, fmt.Errorf("failed to unmarshal VaultContainer: %w", err)
+	if unmarshalErr := proto.Unmarshal(rawContent, &vaultContainer); unmarshalErr != nil {
+		return false, fmt.Errorf("failed to unmarshal VaultContainer: %w", unmarshalErr)
 	}
 
 	// Step 4: Validate VaultContainer structure
@@ -398,14 +395,14 @@ func IsValidVultFile(content string) (bool, error) {
 	// Step 5: Try to decode and validate the inner vault
 	if !vaultContainer.IsEncrypted {
 		// For unencrypted vaults, validate the inner vault structure
-		vaultData, err := base64.StdEncoding.DecodeString(vaultContainer.Vault)
-		if err != nil {
-			return false, fmt.Errorf("failed to decode inner vault data: %w", err)
+		vaultData, decodeErr := base64.StdEncoding.DecodeString(vaultContainer.Vault)
+		if decodeErr != nil {
+			return false, fmt.Errorf("failed to decode inner vault data: %w", decodeErr)
 		}
 
 		var vault v1.Vault
-		if err := proto.Unmarshal(vaultData, &vault); err != nil {
-			return false, fmt.Errorf("failed to unmarshal inner vault: %w", err)
+		if unmarshalErr := proto.Unmarshal(vaultData, &vault); unmarshalErr != nil {
+			return false, fmt.Errorf("failed to unmarshal inner vault: %w", unmarshalErr)
 		}
 
 		// Step 6: Validate essential vault fields
@@ -483,7 +480,7 @@ func isValidBase64(s string) bool {
 	s = strings.ReplaceAll(s, " ", "")
 	s = strings.ReplaceAll(s, "\t", "")
 
-	if len(s) == 0 {
+	if s == "" {
 		return false
 	}
 
@@ -499,14 +496,12 @@ func isValidBase64(s string) bool {
 
 // isValidHexString checks if a string is a valid hexadecimal string
 func isValidHexString(s string) bool {
-	if len(s) == 0 {
+	if s == "" {
 		return false
 	}
 
 	// Remove 0x prefix if present
-	if strings.HasPrefix(s, "0x") {
-		s = s[2:]
-	}
+	s = strings.TrimPrefix(s, "0x")
 
 	// Check if all characters are valid hex
 	validHexRegex := regexp.MustCompile(`^[0-9a-fA-F]+$`)
@@ -521,6 +516,7 @@ func ValidateVultFileFromPath(filePath string) (bool, error) {
 	}
 
 	// Read file content
+	// #nosec G304 - filePath is validated by validateSafePath above
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return false, fmt.Errorf("failed to read file: %w", err)
@@ -541,7 +537,7 @@ func getTimestamp(ts *timestamppb.Timestamp) int64 {
 func validateSafePath(path string) error {
 	// Clean the path to resolve any .. or . elements
 	cleanPath := filepath.Clean(path)
-	
+
 	// Check for dangerous patterns
 	dangerousPaths := []string{
 		"/etc/passwd", "/etc/shadow", "/etc/hosts",
@@ -549,21 +545,21 @@ func validateSafePath(path string) error {
 		"/Windows/System32", "/Windows/system32",
 		"C:\\Windows\\System32", "c:\\windows\\system32",
 	}
-	
+
 	// Convert to lowercase for case-insensitive comparison on Windows
 	lowerPath := strings.ToLower(cleanPath)
-	
+
 	for _, dangerous := range dangerousPaths {
 		if strings.Contains(lowerPath, strings.ToLower(dangerous)) {
 			return fmt.Errorf("access to system path %q is not allowed", dangerous)
 		}
 	}
-	
+
 	// Check for directory traversal attempts
 	if strings.Contains(cleanPath, "..") {
 		return fmt.Errorf("directory traversal detected in path")
 	}
-	
+
 	// Platform-specific additional checks
 	if runtime.GOOS == "windows" {
 		// Check for Windows-specific dangerous paths
@@ -571,7 +567,7 @@ func validateSafePath(path string) error {
 			return fmt.Errorf("device path access not allowed")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -581,25 +577,23 @@ func ValidateSafeOutputPath(path string) error {
 	if err := validateSafePath(path); err != nil {
 		return err
 	}
-	
+
 	// Additional checks for output files
 	cleanPath := filepath.Clean(path)
-	
+
 	// Don't allow writing to system directories
 	systemDirs := []string{
 		"/bin", "/sbin", "/usr/bin", "/usr/sbin",
 		"/boot", "/lib", "/lib64",
 		"C:\\Program Files", "C:\\Windows",
 	}
-	
+
 	lowerPath := strings.ToLower(cleanPath)
 	for _, sysDir := range systemDirs {
 		if strings.HasPrefix(lowerPath, strings.ToLower(sysDir)) {
 			return fmt.Errorf("writing to system directory %q is not allowed", sysDir)
 		}
 	}
-	
+
 	return nil
 }
-
-
