@@ -16,6 +16,9 @@
 # Install vultool
 go install github.com/rowbotony/vultool/cmd/vultool@latest
 
+# First run shows a welcome message with next steps
+vultool --help
+
 # Inspect a vault file (try with our test fixtures)
 vultool inspect -f test/fixtures/testGG20-part1of2.vult --summary
 
@@ -42,7 +45,9 @@ Vultool is a command-line interface extracted from vulticore that focuses specif
 
 - **Vault Inspection**: Parse and display vault metadata
 - **Validation**: Comprehensive vault file validation
-- **Export**: Export vault data to JSON format
+- **Export**: Export vault data to JSON and YAML formats
+- **Vault Comparison**: Compare two vault files with detailed diff output
+- **Command Aliases**: Quick shortcuts for common operations
 - **Encryption Support**: Handle both encrypted and unencrypted vaults
 - **Security**: Built-in path validation and safety checks
 
@@ -63,7 +68,27 @@ go build -o vultool ./cmd/vultool
 vultool --version
 ```
 
+**First Run Experience:**
+On your first run, vultool displays a welcome message with installation confirmation, version information, and helpful next steps. This message appears only once and won't be shown on subsequent runs.
+
 ## Usage
+
+### Quick Commands (New in v0.0.7+)
+
+```bash
+# Show concise vault information (alias for inspect --summary)
+vultool info -f path/to/vault.vult
+
+# Decode vault to JSON or YAML format
+vultool decode -f path/to/vault.vult
+vultool decode -f path/to/vault.vult --yaml
+
+# Verify vault integrity (alias for inspect --validate)
+vultool verify -f path/to/vault.vult
+
+# Compare two vault files (New in v0.0.8)
+vultool diff vault1.vult vault2.vult
+```
 
 ### Basic Inspection
 
@@ -83,6 +108,9 @@ vultool inspect -f path/to/vault.vult --show-keyshares
 ```bash
 # Validate vault structure
 vultool inspect -f path/to/vault.vult --validate
+
+# Or use the quick alias
+vultool verify -f path/to/vault.vult
 ```
 
 ### Export
@@ -90,6 +118,22 @@ vultool inspect -f path/to/vault.vult --validate
 ```bash
 # Export vault metadata to JSON
 vultool inspect -f path/to/vault.vult --export output.json
+
+# Output JSON directly to stdout
+vultool decode -f path/to/vault.vult
+
+# Output YAML directly to stdout
+vultool decode -f path/to/vault.vult --yaml
+```
+
+### Comparison
+
+```bash
+# Compare two vault files
+vultool diff vault1.vult vault2.vult
+
+# Compare with password support for encrypted vaults
+vultool diff --password mypass vault1.vult vault2.vult
 ```
 
 ### Encrypted Vaults
@@ -161,19 +205,27 @@ go test ./...
 
 ### CI/CD
 
-Automated pipeline with multi-platform builds and security scanning:
+Robust automated pipeline with multi-platform builds and comprehensive quality gates:
 
 - **Platforms**: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64)
 - **Security**: gosec, govulncheck, CodeQL, automated dependency updates
-- **Quality**: Tests across Go 1.21-1.23, comprehensive linting
+- **Quality**: Tests across Go 1.21-1.23, comprehensive linting, automated fixture validation
+- **Reliability**: Zero-intervention CI with encrypted test file handling
 
 ```bash
-# Run full CI locally
+# Run full CI locally (includes all checks)
 make ci-local
+
+# Individual components
+make lint          # Code quality checks
+make security-scan # Security vulnerability scanning  
+make validate      # Test fixture validation (handles encrypted files automatically)
 
 # Create release (automated binary builds)
 echo "1.0.0" > VERSION && git tag v1.0.0 && git push --tags
 ```
+
+**New in v0.0.9:** CI pipeline now handles encrypted test fixtures automatically without hanging, ensuring reliable automated builds and deployments.
 
 See [`docs/CI-CD.md`](docs/CI-CD.md) for details.
 
@@ -183,7 +235,7 @@ Vultool was extracted from the vulticore project to provide a focused, standalon
 
 ```go
 // In vulticore/go.mod
-require github.com/rowbotony/vultool v0.0.6-dev
+require github.com/rowbotony/vultool v0.0.9-dev
 
 // For local development:
 replace github.com/rowbotony/vultool => ../vultool

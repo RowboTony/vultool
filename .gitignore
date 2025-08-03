@@ -59,6 +59,7 @@ vultool-*
 
 # Security scan reports
 gosec-report.json
+.gosec.json
 vuln-report.json
 
 # OS generated files

@@ -30,7 +30,12 @@ validate:	## Validate all test fixtures
 	@echo "Validating all test fixtures..."
 	@for file in test/fixtures/*.vult; do \
 		echo "Validating $$file..."; \
-		./vultool inspect -f "$$file" --validate || exit 1; \
+		case "$$file" in \
+			*qa-fast-share2of2.vult) \
+				./vultool inspect -f "$$file" --validate --password "vulticli01" || exit 1 ;; \
+			*) \
+				./vultool inspect -f "$$file" --validate || exit 1 ;; \
+		esac; \
 	done
 	@echo "All fixtures validated successfully!"
 

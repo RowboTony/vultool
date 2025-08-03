@@ -9,6 +9,7 @@ require (
 	github.com/vultisig/commondata v0.0.0-20241001024659-50cb6f1ca345
 	golang.org/x/term v0.30.0
 	google.golang.org/protobuf v1.34.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

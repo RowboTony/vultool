@@ -19,28 +19,29 @@ import (
 	"golang.org/x/term"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gopkg.in/yaml.v3"
 )
 
 // VaultInfo contains parsed vault information
 // Fields are ordered for optimal memory alignment (largest to smallest)
 type VaultInfo struct {
-	Metadata       map[string]string `json:"metadata,omitempty"`
-	Name           string            `json:"name"`
-	PublicKeyECDSA string            `json:"public_key_ecdsa"`
-	PublicKeyEDDSA string            `json:"public_key_eddsa"`
-	HexChainCode   string            `json:"hex_chain_code"`
-	LocalPartyKey  string            `json:"local_party_key"`
-	FilePath       string            `json:"file_path"`
-	KeyShares      []KeyShareInfo    `json:"key_shares,omitempty"`
-	CreatedAt      int64             `json:"created_at,omitempty"`
-	Version        int32             `json:"version"`
-	IsEncrypted    bool              `json:"is_encrypted"`
+	Metadata       map[string]string `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	Name           string            `json:"name" yaml:"name"`
+	PublicKeyECDSA string            `json:"public_key_ecdsa" yaml:"public_key_ecdsa"`
+	PublicKeyEDDSA string            `json:"public_key_eddsa" yaml:"public_key_eddsa"`
+	HexChainCode   string            `json:"hex_chain_code" yaml:"hex_chain_code"`
+	LocalPartyKey  string            `json:"local_party_key" yaml:"local_party_key"`
+	FilePath       string            `json:"file_path" yaml:"file_path"`
+	KeyShares      []KeyShareInfo    `json:"key_shares,omitempty" yaml:"key_shares,omitempty"`
+	CreatedAt      int64             `json:"created_at,omitempty" yaml:"created_at,omitempty"`
+	Version        int32             `json:"version" yaml:"version"`
+	IsEncrypted    bool              `json:"is_encrypted" yaml:"is_encrypted"`
 }
 
 // KeyShareInfo contains information about a key share
 type KeyShareInfo struct {
-	PublicKey string `json:"public_key"`
-	KeyType   string `json:"key_type"` // ECDSA or EDDSA
+	PublicKey string `json:"public_key" yaml:"public_key"`
+	KeyType   string `json:"key_type" yaml:"key_type"` // ECDSA or EDDSA
 }
 
 // ParseVaultFile parses a .vult file and returns vault information
@@ -270,6 +271,153 @@ func ExportToJSON(vaultInfo *VaultInfo, writer io.Writer, pretty bool) error {
 	}
 
 	return nil
+}
+
+// ExportToYAML exports vault info to YAML format
+func ExportToYAML(vaultInfo *VaultInfo, writer io.Writer) error {
+	data, err := yaml.Marshal(vaultInfo)
+	if err != nil {
+		return fmt.Errorf("failed to marshal YAML: %w", err)
+	}
+
+	_, err = writer.Write(data)
+	if err != nil {
+		return fmt.Errorf("failed to write YAML: %w", err)
+	}
+
+	return nil
+}
+
+// VaultDiff represents differences between two vaults
+type VaultDiff struct {
+	Details        []string `yaml:"details"`
+	Same           bool     `yaml:"same"`
+	NameDiff       bool     `yaml:"name_different"`
+	EncryptionDiff bool     `yaml:"encryption_different"`
+	KeysDiff       bool     `yaml:"keys_different"`
+	SharesDiff     bool     `yaml:"shares_different"`
+}
+
+// DiffVaults compares two vaults and returns differences
+func DiffVaults(vault1, vault2 *VaultInfo) *VaultDiff {
+	diff := &VaultDiff{
+		Same:    true,
+		Details: []string{},
+	}
+
+	// Compare names
+	if vault1.Name != vault2.Name {
+		diff.Same = false
+		diff.NameDiff = true
+		diff.Details = append(diff.Details, fmt.Sprintf("Name: '%s' vs '%s'", vault1.Name, vault2.Name))
+	}
+
+	// Compare encryption status
+	if vault1.IsEncrypted != vault2.IsEncrypted {
+		diff.Same = false
+		diff.EncryptionDiff = true
+		diff.Details = append(diff.Details, fmt.Sprintf("Encryption: %t vs %t", vault1.IsEncrypted, vault2.IsEncrypted))
+	}
+
+	// Compare public keys
+	if vault1.PublicKeyECDSA != vault2.PublicKeyECDSA {
+		diff.Same = false
+		diff.KeysDiff = true
+		diff.Details = append(diff.Details, fmt.Sprintf("ECDSA Key: '%s' vs '%s'",
+			truncateKey(vault1.PublicKeyECDSA), truncateKey(vault2.PublicKeyECDSA)))
+	}
+
+	if vault1.PublicKeyEDDSA != vault2.PublicKeyEDDSA {
+		diff.Same = false
+		diff.KeysDiff = true
+		diff.Details = append(diff.Details, fmt.Sprintf("EDDSA Key: '%s' vs '%s'",
+			truncateKey(vault1.PublicKeyEDDSA), truncateKey(vault2.PublicKeyEDDSA)))
+	}
+
+	// Compare hex chain code
+	if vault1.HexChainCode != vault2.HexChainCode {
+		diff.Same = false
+		diff.KeysDiff = true
+		diff.Details = append(diff.Details, fmt.Sprintf("Chain Code: '%s' vs '%s'",
+			truncateKey(vault1.HexChainCode), truncateKey(vault2.HexChainCode)))
+	}
+
+	// Compare local party keys
+	if vault1.LocalPartyKey != vault2.LocalPartyKey {
+		diff.Same = false
+		diff.Details = append(diff.Details, fmt.Sprintf("Local Party: '%s' vs '%s'", vault1.LocalPartyKey, vault2.LocalPartyKey))
+	}
+
+	// Compare key shares count and content
+	if len(vault1.KeyShares) != len(vault2.KeyShares) {
+		diff.Same = false
+		diff.SharesDiff = true
+		diff.Details = append(diff.Details, fmt.Sprintf("Key Shares Count: %d vs %d", len(vault1.KeyShares), len(vault2.KeyShares)))
+	} else {
+		// Compare individual shares
+		for i, share1 := range vault1.KeyShares {
+			if i < len(vault2.KeyShares) {
+				share2 := vault2.KeyShares[i]
+				if share1.PublicKey != share2.PublicKey {
+					diff.Same = false
+					diff.SharesDiff = true
+					diff.Details = append(diff.Details, fmt.Sprintf("Share %d Key: '%s' vs '%s'", i+1,
+						truncateKey(share1.PublicKey), truncateKey(share2.PublicKey)))
+				}
+				if share1.KeyType != share2.KeyType {
+					diff.Same = false
+					diff.SharesDiff = true
+					diff.Details = append(diff.Details, fmt.Sprintf("Share %d Type: '%s' vs '%s'", i+1, share1.KeyType, share2.KeyType))
+				}
+			}
+		}
+	}
+
+	// Compare creation timestamps
+	if vault1.CreatedAt != vault2.CreatedAt {
+		diff.Same = false
+		diff.Details = append(diff.Details, fmt.Sprintf("Created At: %d vs %d", vault1.CreatedAt, vault2.CreatedAt))
+	}
+
+	return diff
+}
+
+// truncateKey truncates long keys for display
+func truncateKey(key string) string {
+	if len(key) > 16 {
+		return key[:16] + "..."
+	}
+	return key
+}
+
+// FormatDiff returns a human-readable diff output with optional colors
+func FormatDiff(diff *VaultDiff, useColors bool) string {
+	var sb strings.Builder
+
+	if diff.Same {
+		if useColors {
+			sb.WriteString("\033[32m✓ Vaults are identical\033[0m\n")
+		} else {
+			sb.WriteString("✓ Vaults are identical\n")
+		}
+		return sb.String()
+	}
+
+	if useColors {
+		sb.WriteString("\033[31m✗ Vaults differ:\033[0m\n")
+	} else {
+		sb.WriteString("✗ Vaults differ:\n")
+	}
+
+	for _, detail := range diff.Details {
+		if useColors {
+			sb.WriteString(fmt.Sprintf("  \033[33m- %s\033[0m\n", detail))
+		} else {
+			sb.WriteString(fmt.Sprintf("  - %s\n", detail))
+		}
+	}
+
+	return sb.String()
 }
 
 // GetSummary returns a human-readable summary of the vault

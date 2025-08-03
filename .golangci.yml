@@ -2,14 +2,10 @@ run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
-  skip-dirs:
-    - test/fixtures
-    - vendor
-  skip-files:
-    - ".*\\.pb\\.go$"
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
 
@@ -19,7 +15,6 @@ linters-settings:
     check-blank: true
   
   govet:
-    check-shadowing: true
     enable-all: true
   
   gofmt:
@@ -71,18 +66,15 @@ linters:
     - gocritic
     - gocyclo
     - gosec
-  
-  disable:
-    - varcheck    # deprecated
-    - structcheck # deprecated  
-    - deadcode    # deprecated
-    - maligned    # deprecated
-    - golint      # deprecated
-    - interfacer  # deprecated
-    - scopelint   # deprecated
+    - predeclared  # Enable identifier shadowing linter explicitly
 
 issues:
   exclude-use-default: false
+  exclude-files:
+    - ".*\\.pb\\.go$"
+  exclude-dirs:
+    - test/fixtures
+    - vendor
   exclude-rules:
     # Exclude some linters from running on tests files
     - path: _test\.go

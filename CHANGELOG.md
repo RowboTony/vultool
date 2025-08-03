@@ -7,15 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Enhanced test fixtures integration and validation
-- Additional CLI export formats (YAML, Markdown)
+## [v0.0.9-dev] - 2025-08-03
 
-### Changed
-- Performance optimizations for large vault files
+### Added
+- Automatic password handling for encrypted test fixtures in the CI pipeline
+- Comprehensive error handling and linting improvements to adhere to best practices
+
+### Enhanced
+- CI stability: Fixture validations execute without manual intervention
+- Modernized golangci-lint configuration to remove deprecated settings
+- POSIX-compatible shell scripting in the Makefile for broader compatibility
 
 ### Security
-- Enhanced input validation for file path sanitization
+- Optimized file handling with #nosec annotations for specific safe usages
+- Struct alignment optimization for the VaultDiff structure to enhance performance
+
+## [v0.0.8-dev] - 2025-08-03
+### Added
+- **`diff` command**: Compare two vault files with detailed difference analysis
+  - Shows differences in metadata, keys, shares, and timestamps
+  - Colored output for easy visualization (green for identical, red/yellow for differences)
+  - Supports encrypted vault comparison with password handling
+  - Truncated key display for readability
+- **YAML output support**: `decode` command now supports `--yaml` flag
+  - Enhanced `decode` command with dual JSON/YAML output capability
+  - Consistent formatting with proper YAML structure tags
+- **First-run detection**: One-time welcome message with installation success notification
+- **0.1 Inspector milestone completion**: All **`spec.md`** 0.1 requirements fulfilled
+
+### Enhanced
+- **`decode` command**: Updated description and help text to reflect JSON/YAML capabilities
+- **Comprehensive vault comparison**: Field-by-field analysis including share content
+- **Developer experience**: All new features follow established CLI patterns and security practices
+- **Documentation**: README updated with diff command examples and YAML usage
+
+### Technical
+- Added `gopkg.in/yaml.v3` dependency for YAML marshaling
+- Implemented `VaultDiff` struct for structured difference representation
+- Added `DiffVaults()` and `FormatDiff()` functions for vault comparison logic
+- Enhanced struct tags with `yaml:` annotations for proper YAML output
+- Maintained backward compatibility with all existing functionality
+
+## [v0.0.7-dev] - 2025-08-03
+### Added
+- **Command aliases**: New CLI shortcuts for common operations
+  - `info`: Concise vault information (alias for `inspect --summary`)
+  - `decode`: JSON output to stdout (alias for `inspect` with JSON output)
+  - `verify`: Vault integrity validation with proper exit codes (alias for `inspect --validate`)
+- **Enhanced CLI UX**: All aliases support same flags (`-f`, `--password`) with consistent behavior
+- **Proper exit codes**: `verify` command exits with 0 for valid vaults, 1 for invalid
+- **0.1 Inspector milestone progress**: First part of **`spec.md`** roadmap implementation
+
+### Enhanced
+- **Help system**: All new commands automatically integrated with Cobra help
+- **Backward compatibility**: All existing `inspect` functionality unchanged
+- **Documentation**: README updated with new command examples and usage patterns
+- **Security**: All aliases inherit existing path validation and security checks
+
+### Technical
+- Command implementation follows DRY principles by reusing existing vault parsing logic
+- JSON output uses existing `ExportToJSON` function for consistency
+- Flag patterns standardized across all commands for predictable UX
 
 ## [v0.0.6-dev] - 2025-08-02
 ### BREAKING CHANGES
