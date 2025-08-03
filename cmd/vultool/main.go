@@ -21,7 +21,10 @@ func main() {
 		Short:   "Vultool - Standalone CLI for .vult file operations",
 		Long:    `A standalone CLI tool for managing vault operations, compatible with Vultisig security models.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// Default action?
+			// Show help when no command is provided
+			if err := cmd.Help(); err != nil {
+				fmt.Printf("Error showing help: %v\n", err)
+			}
 		},
 	}
 
