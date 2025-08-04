@@ -56,6 +56,7 @@ jobs:
     
     - name: Get version
       id: get_version
+      shell: bash
       run: |
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           VERSION="${{ github.event.inputs.tag }}"
@@ -71,6 +72,7 @@ jobs:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
         CGO_ENABLED: 0
+      shell: bash
       run: |
         BINARY_NAME="vultool-${{ steps.get_version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
         if [ "${{ matrix.goos }}" = "windows" ]; then
@@ -78,11 +80,12 @@ jobs:
         fi
         
         echo "Building ${BINARY_NAME}..."
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          pwsh ./build.ps1 -Output ${BINARY_NAME} -BuildFlags "-s -w -extldflags '-static'"
-        else
-          ./build.sh ${BINARY_NAME}
-        fi
+        go build \
+          -ldflags "-X main.version=${{ steps.get_version.outputs.version }} -s -w -extldflags '-static'" \
+          -a -installsuffix cgo \
+          -trimpath \
+          -o ${BINARY_NAME} \
+          ./cmd/vultool
         
         # Log build info
         ls -lh ${BINARY_NAME}
@@ -90,6 +93,7 @@ jobs:
     
     - name: Test binary (native only)
       if: (matrix.goos == 'linux' && matrix.os == 'ubuntu-22.04' && matrix.goarch == 'amd64') || (matrix.goos == 'darwin' && matrix.os == 'macos-13' && matrix.goarch == 'amd64') || (matrix.goos == 'windows' && matrix.os == 'windows-2022')
+      shell: bash
       run: |
         BINARY_NAME="vultool-${{ steps.get_version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
         if [ "${{ matrix.goos }}" = "windows" ]; then
@@ -102,6 +106,7 @@ jobs:
         echo "Binary test successful!"
     
     - name: Generate checksum
+      shell: bash
       run: |
         BINARY_NAME="vultool-${{ steps.get_version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
         if [ "${{ matrix.goos }}" = "windows" ]; then
