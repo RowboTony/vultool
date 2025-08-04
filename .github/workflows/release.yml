@@ -78,12 +78,11 @@ jobs:
         fi
         
         echo "Building ${BINARY_NAME}..."
-        go build \
-          -ldflags "-X main.version=${{ steps.get_version.outputs.version }} -s -w -extldflags '-static'" \
-          -a -installsuffix cgo \
-          -trimpath \
-          -o ${BINARY_NAME} \
-          ./cmd/vultool
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          pwsh ./build.ps1 -Output ${BINARY_NAME} -BuildFlags "-s -w -extldflags '-static'"
+        else
+          ./build.sh ${BINARY_NAME}
+        fi
         
         # Log build info
         ls -lh ${BINARY_NAME}

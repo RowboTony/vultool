@@ -39,7 +39,7 @@ Key Shares: 2
 
 ## Overview
 
-Vultool is a command-line interface extracted from vulticore that focuses specifically on `.vult` file operations. It provides a clean, standalone tool for inspecting, validating, and working with Vultisig vault files.
+Vultool is a standalone command-line interface that focuses specifically on `.vult` file operations. It provides a clean, focused tool for inspecting, validating, and working with Vultisig vault files.
 
 ## Features
 
@@ -62,7 +62,22 @@ go install github.com/rowbotony/vultool/cmd/vultool@latest
 # Or build locally
 git clone https://github.com/rowbotony/vultool.git
 cd vultool
-go build -o vultool ./cmd/vultool
+
+# Linux/macOS - using make
+make build
+
+# Linux/macOS - using build script
+./build.sh
+
+# Windows - using PowerShell
+.\build.ps1
+
+# Or build manually with version injection
+# Linux/macOS:
+go build -ldflags "-X main.version=$(cat VERSION)" -o vultool ./cmd/vultool
+
+# Windows PowerShell:
+go build -ldflags "-X main.version=$(Get-Content VERSION)" -o vultool.exe ./cmd/vultool
 
 # Verify installation
 vultool --version
@@ -192,9 +207,22 @@ cd vultool
 git submodule init
 git submodule update
 
-# Install dependencies and build
+# Install dependencies
 go mod tidy
-go build ./cmd/vultool
+
+# Build using make (Linux/macOS)
+make build
+
+# Build using scripts
+./build.sh              # Linux/macOS
+.\build.ps1            # Windows PowerShell
+
+# Build manually
+# Linux/macOS:
+go build -ldflags "-X main.version=$(cat VERSION)" -o vultool ./cmd/vultool
+
+# Windows PowerShell:
+go build -ldflags "-X main.version=$(Get-Content VERSION)" -o vultool.exe ./cmd/vultool
 
 # Test with shared fixtures
 ./vultool inspect -f test/fixtures/testGG20-part1of2.vult --summary

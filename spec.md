@@ -3,7 +3,7 @@
 ## 0 . Executive Summary
 
 `vultool` is a security-first, developer-oriented CLI for creating, inspecting, manipulating, and recovering **`.vult` threshold-share files** used by the Vultisig MPC wallet stack.
-It aims to expose *all* safe, native features of the underlying DKLS23 / GG20 libraries (ECDSA **and** EdDSA), while laying the groundwork for a future GUI (Flutter / Web) that will reuse the exact same Go modules.
+It aims to expose *all* safe, native features of the underlying DKLS23 / GG20 libraries (ECDSA **and** EdDSA), while laying the groundwork for a future GUI (Web) that will reuse the exact same Go modules.
 
 ---
 
@@ -238,14 +238,14 @@ vultool diff alice.vult backup.vult
 ### `ROADMAP.md` (concise)
 
 ```
-Q3-2025  0.1 Inspector  – inspect/aliases/diff/passwords
-Q4-2025  0.2 Medic      – recovery & derivation (BTC/ETH/SOL)
-Q1-2026  0.3 Creator    – keygen/reshare + QR transport
-Q2-2026  0.4 Networker  – local VultiServer API, LAN relay
-Q3-2026  0.5 Polisher   – UX, shell completions, man pages
-Q4-2026  1.0 Stable     – migrate, refresh, Windows MSI, Homebrew
+0.1 Inspector  – inspect/aliases/diff/passwords
+0.2 Medic      – recovery & derivation (BTC/ETH/SOL)
+0.3 Creator    – keygen/reshare + QR transport
+0.4 Networker  – local VultiServer API, LAN relay
+0.5 Polisher   – UX, shell completions, man pages
+1.0 Stable     – migrate, refresh, Windows MSI, Homebrew
 ```
 
-*Milestones are aspirational; security reviews may shift dates.*
+*Pure grind mode - milestones ship when they're ready.*
 
 ---

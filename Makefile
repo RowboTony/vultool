@@ -8,10 +8,24 @@ help:	## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-12s %s\n", $$1, $$2}'
 
 build:	## Build the vultool binary
-	go build -ldflags "-X main.version=$$(cat VERSION)" -o vultool ./cmd/vultool
+	@if [ -f VERSION ]; then \
+		VERSION=$$(cat VERSION); \
+		echo "Building vultool version: $$VERSION"; \
+		go build -ldflags "-X main.version=$$VERSION" -o vultool ./cmd/vultool; \
+	else \
+		echo "ERROR: VERSION file not found"; \
+		exit 1; \
+	fi
 
 install:	## Install vultool to GOPATH/bin
-	go install -ldflags "-X main.version=$$(cat VERSION)" ./cmd/vultool
+	@if [ -f VERSION ]; then \
+		VERSION=$$(cat VERSION); \
+		echo "Installing vultool version: $$VERSION"; \
+		go install -ldflags "-X main.version=$$VERSION" ./cmd/vultool; \
+	else \
+		echo "ERROR: VERSION file not found"; \
+		exit 1; \
+	fi
 
 test:	## Run all tests
 	go test ./...
