@@ -1,10 +1,8 @@
 # vultool
 
-[![CI](https://github.com/rowbotony/vultool/workflows/CI/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/ci.yml)
-[![Security](https://github.com/rowbotony/vultool/workflows/Security/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/security.yml)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/rowbotony/vultool)](https://github.com/rowbotony/vultool/blob/main/go.mod)
-[![Release](https://img.shields.io/github/v/release/rowbotony/vultool)](https://github.com/rowbotony/vultool/releases/latest)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![CI](https://github.com/rowbotony/vultool/workflows/CI/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/ci.yml) [![Security](https://github.com/rowbotony/vultool/workflows/Security/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/security.yml) [![Go Version](https://img.shields.io/github/go-mod/go-version/rowbotony/vultool)](https://github.com/rowbotony/vultool/blob/main/go.mod) [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/rowbotony/vultool)](https://github.com/rowbotony/vultool/releases) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
+--- 
 
 **A standalone cross-platform Go CLI tool for managing `.vult` vault file operations, compatible with Vultisig security models.**
 
@@ -15,9 +13,6 @@
 ```bash
 # Install vultool
 go install github.com/rowbotony/vultool/cmd/vultool@latest
-
-# First run shows a welcome message with next steps
-vultool --help
 
 # Inspect a vault file (try with our test fixtures)
 vultool inspect -f test/fixtures/testGG20-part1of2.vult --summary
@@ -82,9 +77,6 @@ go build -ldflags "-X main.version=$(Get-Content VERSION)" -o vultool.exe ./cmd/
 # Verify installation
 vultool --version
 ```
-
-**First Run Experience:**
-On your first run, vultool displays a welcome message with installation confirmation, version information, and helpful next steps. This message appears only once and won't be shown on subsequent runs.
 
 ## Usage
 
@@ -257,23 +249,6 @@ echo "1.0.0" > VERSION && git tag v1.0.0 && git push --tags
 
 See [`docs/CI-CD.md`](docs/CI-CD.md) for details.
 
-## Relationship to vulticore
-
-Vultool was extracted from the vulticore project to provide a focused, standalone CLI for `.vult` file operations. Vulticore now imports vultool as a dependency:
-
-```go
-// In vulticore/go.mod
-require github.com/rowbotony/vultool v0.1.0-dev
-
-// For local development:
-replace github.com/rowbotony/vultool => ../vultool
-```
-
-This separation provides:
-- **Clean separation of concerns**
-- **Independent versioning**
-- **Reusable vault operations**
-- **Focused CLI tool**
 
 ## Security
 

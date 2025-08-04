@@ -97,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.0.6-dev] - 2025-08-02
 ### BREAKING CHANGES
-- **Standalone vultool**: Extracted from vulticore as independent CLI tool with own repository
+- **Standalone vultool**: Independent CLI tool with own repository
 - **Import changes**: vultool now has independent Go module `github.com/rowbotony/vultool`
 - **Repository structure**: Complete standalone project with own CI/CD, documentation, and release process
 
@@ -107,7 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security integration**: gosec, govulncheck, CodeQL, and automated dependency updates
 - **Enhanced Makefile**: Local CI simulation, security scanning, cross-platform builds, and pre-commit hooks
 - **Professional documentation**: Concise CI/CD guide and updated README with development workflows
-- **Independent project structure**: Complete separation from vulticore with own versioning and releases
+- **Independent project structure**: Standalone project with own versioning and releases
 
 ### Enhanced
 - **Public API**: Clean client interface in `pkg/client/` for library usage by other Go projects
@@ -122,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Established branch protection rules and quality gate enforcement
 - Complete CI/CD pipeline with multi-platform testing matrix
 
-## [v0.0.5-dev] - 2025-08-02 (Final vulticore-embedded version)
+## [v0.0.5-dev] - 2025-08-02
 ### Added
 - **Comprehensive CI/CD documentation**: Complete workflow guide with local testing instructions
 - **Flutter test suite**: Working widget tests for VulticoreApp with proper provider setup
@@ -142,7 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation structure**: Added CI/CD workflow documentation with cross-references
 - **Status visibility**: Project health indicators via badges for CI, security, and platform support
 
-## [v0.0.4-dev] - 2025-08-02 (Inherited from vulticore)
+## [v0.0.4-dev] - 2025-08-02
 ### Added
 - **Content-based duplicate detection**: SHA-256 hashing for vault file imports
 - **Multi-vault support**: Enhanced handling of multiple vault files simultaneously  
@@ -152,7 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Duplicate detection logic**: Robust content hashing instead of filename-based checking
 - **Cross-platform compilation**: Resolved platform-specific crypto library issues
 
-## [v0.0.3-dev] - 2025-08-01 (Inherited from vulticore)
+## [v0.0.3-dev] - 2025-08-01
 ### Added
 - **WebAssembly integration**: Complete WASM compilation pipeline for browser usage
 - **JavaScript bridge**: Production-ready vault_parser_interface.js for web interop
@@ -168,7 +168,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform compatibility verified across major browsers
 - Established foundation for encrypted vault and transaction signing support
 
-## [v0.0.2-dev] - 2025-07-31 (Inherited from vulticore)
+## [v0.0.2-dev] - 2025-07-31
 ### Added
 - **Security scanning**: gosec and govulncheck integration
 - **Dependency management**: Automated upstream sync capabilities
@@ -183,7 +183,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented change tracking and validation systems
 - Clean commit history with milestone tracking
 
-## [v0.0.1-dev] - 2025-07-31 (Inherited from vulticore)
+## [v0.0.1-dev] - 2025-07-31
 ### Added
 - **Initial CLI implementation**: vault inspect command with summary, keyshares, validate, and export
 - **Vault parsing**: Support for both encrypted and unencrypted .vult files  

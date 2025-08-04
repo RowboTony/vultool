@@ -26,7 +26,6 @@ Welcome to the vultool documentation! This directory contains comprehensive guid
 | **Install and use vultool** | [Installation Guide](../README.md#installation) |
 | **Contribute code** | [Contributing Guide](../CONTRIBUTING.md) |
 | **Report a bug** | [GitHub Issues](https://github.com/rowbotony/vultool/issues) |
-| **Ask a question** | [GitHub Discussions](https://github.com/rowbotony/vultool/discussions) |
 | **Understand the CI/CD** | [CI/CD Pipeline](CI-CD.md) |
 | **See recent changes** | [CHANGELOG](../CHANGELOG.md) |
 
