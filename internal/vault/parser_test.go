@@ -3,6 +3,7 @@ package vault
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -143,8 +144,15 @@ func TestParseVaultFile_NonExistentFile(t *testing.T) {
 }
 
 func TestParseVaultFile_InvalidPath(t *testing.T) {
-	// Test directory traversal attempt - use a path that will actually fail validation
-	_, err := ParseVaultFile("/etc/passwd")
+	// Test directory traversal attempt - use platform-appropriate dangerous paths
+	var dangerousPath string
+	if runtime.GOOS == "windows" {
+		dangerousPath = "C:\\Windows\\System32\\kernel32.dll"
+	} else {
+		dangerousPath = "/etc/passwd"
+	}
+	
+	_, err := ParseVaultFile(dangerousPath)
 	if err == nil {
 		t.Fatal("Expected error for unsafe path")
 	}
@@ -381,10 +389,18 @@ func TestValidateSafeOutputPath_ValidPath(t *testing.T) {
 }
 
 func TestValidateSafeOutputPath_DangerousPath(t *testing.T) {
-	// Test with system directory (should fail)
-	err := ValidateSafeOutputPath("/bin/malicious")
+	// Test with system directory (should fail) - use platform-appropriate paths
+	var dangerousPath string
+	if runtime.GOOS == "windows" {
+		dangerousPath = "C:\\Windows\\malicious.exe"
+	} else {
+		dangerousPath = "/bin/malicious"
+	}
+	
+	err := ValidateSafeOutputPath(dangerousPath)
 	if err == nil {
 		t.Error("Expected error for dangerous output path")
+		return // Early return to avoid nil pointer dereference
 	}
 	if !strings.Contains(err.Error(), "system directory") {
 		t.Errorf("Expected system directory error, got: %v", err)
