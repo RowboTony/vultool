@@ -591,7 +591,7 @@ func generateEd25519Addresses(privateKey []byte, chain SupportedChain) (*Address
 // generateWIF creates a Bitcoin Wallet Import Format string
 // This creates a proper Base58Check-encoded WIF that can be imported into Bitcoin wallets
 func generateWIF(privateKeyBytes []byte) string {
-	return generateWIFManual(privateKeyBytes, &chaincfg.MainNetParams, true)
+	return "WIF:" + generateWIFManual(privateKeyBytes, &chaincfg.MainNetParams, true)
 }
 
 // generateWIFManual creates WIF manually using Base58Check encoding
