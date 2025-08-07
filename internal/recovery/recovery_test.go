@@ -91,7 +91,7 @@ func TestRecoverPrivateKeys_InsufficientShares(t *testing.T) {
 	}
 }
 
-// TestRecoverPrivateKeys_InvalidFiles - Basic error handling test  
+// TestRecoverPrivateKeys_InvalidFiles - Basic error handling test
 func TestRecoverPrivateKeys_InvalidFiles(t *testing.T) {
 	_, err := RecoverPrivateKeys([]string{"nonexistent1", "nonexistent2"}, 2, "")
 	if err == nil {

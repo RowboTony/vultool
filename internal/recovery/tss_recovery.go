@@ -1048,4 +1048,3 @@ func ReconstructDKLSKey(vaultFiles []string, password string, keyType TssKeyType
 	// For now, return an error indicating this is not yet supported
 	return nil, fmt.Errorf("DKLS vault format is not yet supported in this version of vultool - only GG20 format is currently implemented")
 }
-
