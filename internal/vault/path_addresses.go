@@ -1,8 +1,8 @@
 package vault
 
 import (
-	"strings"
 	"github.com/rowbotony/vultool/internal/types"
+	"strings"
 )
 
 // DerivePathAddresses derives addresses for specified paths

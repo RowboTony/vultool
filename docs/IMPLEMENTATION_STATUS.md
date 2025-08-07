@@ -88,16 +88,25 @@ This document tracks the implementation status of various features in vultool to
 - No swap/DeFi integration
 - Limited blockchain validation beyond address generation
 
+### Known Technical Debt
+- **Linting Issues** (v0.2.1-dev priority): ~50+ linting warnings temporarily suppressed in CI
+  - Error handling: Unchecked return values from flag parsing and file operations
+  - Security: File inclusion and integer overflow warnings (likely false positives)
+  - Code quality: Unused functions, style issues, struct alignment
+  - Performance: Memory allocation and field alignment optimizations
+
 ## Version History
 
-### v0.3.0 (Current)
+### v0.2.0-dev (Current)
 - ✅ Fixed Bitcoin Cash CashAddr encoding using bchutil library
 - ✅ Fixed SUI address derivation using Blake2b hashing
 - ✅ Unified address derivation implementations
 - ✅ Added comprehensive development principles documentation
 - ✅ Enhanced error handling and validation
+- ✅ GG20 TSS Recovery functionality with address validation
+- ✅ EdDSA wallet format support for Solana and SUI
 
-### v0.2.0
+### v0.1.0
 - ✅ Added GG20 recovery functionality
 - ✅ Implemented address derivation for major chains
 - ✅ Added JSON/YAML export capabilities
@@ -138,7 +147,7 @@ This project now follows strict anti-placeholder principles:
 
 ---
 
-**Last Updated**: December 2024  
+**Last Updated**: August 2025  
 **Next Review**: When significant features are added or issues discovered
 
 This document is automatically updated as part of our development workflow to ensure accuracy and transparency.

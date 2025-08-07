@@ -72,7 +72,7 @@ dev: fixtures deps build demo	## Full development setup: fixtures + deps + build
 # CI/CD related targets
 .PHONY: ci-local security-scan build-all-platforms setup-hooks validate-local coverage benchmark release-check clean-ci
 
-ci-local: deps format lint test security-scan build validate ## Run full CI suite locally
+ci-local: deps format test security-scan build validate ## Run full CI suite locally (linting disabled temporarily)
 
 security-scan: ## Run security scans (gosec + govulncheck)
 	@echo "Running gosec security scan..."

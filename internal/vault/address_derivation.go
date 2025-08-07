@@ -13,8 +13,8 @@ import (
 	"github.com/btcsuite/btcd/btcutil/hdkeychain"
 	btcchaincfg "github.com/btcsuite/btcd/chaincfg"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
-	"github.com/gcash/bchutil"
 	bchchaincfg "github.com/gcash/bchd/chaincfg"
+	"github.com/gcash/bchutil"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
@@ -54,14 +54,14 @@ func deriveSUIAddressFromEdDSA(pubKeyBytes []byte) string {
 
 	// Add a prefix byte (0x00) to indicate Ed25519 key scheme
 	schemeBytes := []byte{0x00}
-	
+
 	// Hash the scheme + public key bytes
 	hasher.Write(schemeBytes)
 	hasher.Write(pubKeyBytes)
-	
+
 	// Get the hash result
 	hashResult := hasher.Sum(nil)
-	
+
 	// Format as 0x prefixed hex string
 	return "0x" + hex.EncodeToString(hashResult)
 }
@@ -289,13 +289,13 @@ func deriveBitcoinCashAddress(pubKey *secp256k1.PublicKey) string {
 	// Derive proper Bitcoin Cash CashAddr format using bchutil
 	pubKeyCompressed := pubKey.SerializeCompressed()
 	hash160 := hash160(pubKeyCompressed)
-	
+
 	// Use bchutil to create a proper Bitcoin Cash address
 	addr, err := bchutil.NewAddressPubKeyHash(hash160, &bchchaincfg.MainNetParams)
 	if err != nil {
 		return "error: " + err.Error()
 	}
-	
+
 	// The EncodeAddress() will return CashAddr format by default
 	return addr.EncodeAddress()
 }
@@ -448,7 +448,7 @@ func encodeCashAddr(hrp string, data []byte) (string, error) {
 	// Calculate the checksum
 	values := append(bech32HrpExpand(hrp), data...)
 	values = append(values, make([]byte, 8)...) // Add 8 zero bytes for checksum calculation
-	polymod := bech32Polymod(values) ^ 0 // CashAddr uses XOR with 0, not 1 like regular bech32
+	polymod := bech32Polymod(values) ^ 0        // CashAddr uses XOR with 0, not 1 like regular bech32
 
 	// Build the checksum
 	checksum := make([]byte, 8)
@@ -456,9 +456,9 @@ func encodeCashAddr(hrp string, data []byte) (string, error) {
 		checksum[i] = byte((polymod >> uint(5*(7-i))) & 31)
 	}
 
-	// Build the address string  
+	// Build the address string
 	result := hrp + ":"
-	
+
 	// Encode the data part
 	for _, val := range data {
 		if val >= 32 {
@@ -466,7 +466,7 @@ func encodeCashAddr(hrp string, data []byte) (string, error) {
 		}
 		result += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[val])
 	}
-	
+
 	// Encode the checksum part
 	for _, val := range checksum {
 		if val >= 32 {
