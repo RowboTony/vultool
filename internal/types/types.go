@@ -158,11 +158,11 @@ func GetCommonDerivationPaths() map[SupportedChain][]DerivationPath {
 func GenerateSequentialPaths(chain SupportedChain, count int) []DerivationPath {
 	var paths []DerivationPath
 	basePath := getBasePath(chain)
-	
+
 	if basePath == "" {
 		return paths // Unsupported chain
 	}
-	
+
 	for i := 0; i < count; i++ {
 		path := fmt.Sprintf("%s%d", basePath, i)
 		paths = append(paths, DerivationPath{
@@ -172,7 +172,7 @@ func GenerateSequentialPaths(chain SupportedChain, count int) []DerivationPath {
 			Purpose:     "sequential",
 		})
 	}
-	
+
 	return paths
 }
 
@@ -208,7 +208,7 @@ func getBasePath(chain SupportedChain) string {
 
 // GetSupportedChains returns a list of all supported blockchain chains
 func GetSupportedChains() []SupportedChain {
-return []SupportedChain{
+	return []SupportedChain{
 		ChainBitcoin,
 		ChainEthereum,
 		ChainSolana,

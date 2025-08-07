@@ -116,7 +116,7 @@ func main() {
 	// Step 3: Analysis
 	fmt.Println("Step 3: Analysis")
 	fmt.Println("================")
-	
+
 	allMatch := true
 	if btcKey != nil && btcKey.Address != expectedBTCAddress {
 		allMatch = false
@@ -151,7 +151,7 @@ func verifyBitcoinWIF(wif string) {
 		fmt.Printf("    WIF appears invalid (too short): %d chars\n", len(wif))
 		return
 	}
-	
+
 	// Check WIF format (should start with 'K' or 'L' for mainnet compressed keys)
 	if wif[0] != 'K' && wif[0] != 'L' && wif[0] != '5' {
 		fmt.Printf("    WIF format issue: starts with '%c' (expected K/L for compressed, 5 for uncompressed)\n", wif[0])

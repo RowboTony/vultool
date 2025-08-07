@@ -90,3 +90,6 @@ debug-keyshares
 cmd/debug_recovery/debug_recovery
 cmd/verify_recovery/verify_recovery
 cmd/debug-keyshares/debug-keyshares
+
+# External dependencies and subprojects
+libdkls/

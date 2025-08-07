@@ -171,7 +171,7 @@ func TestValidateVultFileFromPath_ValidFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get absolute path: %v", err)
 	}
-	
+
 	valid, err := ValidateVultFileFromPath(absPath)
 	if err != nil {
 		t.Errorf("Expected no error for valid vault file path, got: %v", err)

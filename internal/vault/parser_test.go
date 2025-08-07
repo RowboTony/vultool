@@ -9,12 +9,12 @@ import (
 
 // Test file paths
 const (
-	testUnencryptedGG20    = "../../test/fixtures/testGG20-part1of2.vult"
-	testUnencryptedDKLS    = "../../test/fixtures/testDKLS-1of2.vult"
-	testEncryptedVault     = "../../test/fixtures/qa-fast-share2of2.vult"
-	testEncryptedPassword  = "vulticli01"
-	testVault1             = "../../test/fixtures/testGG20-part1of2.vult"
-	testVault2             = "../../test/fixtures/testGG20-part2of2.vult"
+	testUnencryptedGG20   = "../../test/fixtures/testGG20-part1of2.vult"
+	testUnencryptedDKLS   = "../../test/fixtures/testDKLS-1of2.vult"
+	testEncryptedVault    = "../../test/fixtures/qa-fast-share2of2.vult"
+	testEncryptedPassword = "vulticli01"
+	testVault1            = "../../test/fixtures/testGG20-part1of2.vult"
+	testVault2            = "../../test/fixtures/testGG20-part2of2.vult"
 )
 
 func TestParseVaultFile_UnencryptedGG20(t *testing.T) {
@@ -211,7 +211,7 @@ func TestGetSummary(t *testing.T) {
 	}
 
 	summary := GetSummary(vaultInfo)
-	
+
 	// Check that summary contains expected information
 	expectedParts := []string{
 		"Vault:",
@@ -244,16 +244,16 @@ func TestGetKeySharesInfo(t *testing.T) {
 	}
 
 	keySharesInfo := GetKeySharesInfo(vaultInfo)
-	
+
 	// Check that key shares info contains expected information
 	if !strings.Contains(keySharesInfo, "Key Share Information:") {
 		t.Error("Key shares info should contain header")
 	}
-	
+
 	if !strings.Contains(keySharesInfo, "Share 1:") {
 		t.Error("Key shares info should contain first share")
 	}
-	
+
 	if !strings.Contains(keySharesInfo, "ECDSA") || !strings.Contains(keySharesInfo, "EDDSA") {
 		t.Error("Key shares info should contain key types")
 	}
@@ -319,7 +319,7 @@ func TestFormatDiff_Identical(t *testing.T) {
 
 	diff := DiffVaults(vault1, vault1)
 	formatted := FormatDiff(diff, false)
-	
+
 	if !strings.Contains(formatted, "✓ Vaults are identical") {
 		t.Errorf("Expected identical message in formatted diff: %s", formatted)
 	}
@@ -338,7 +338,7 @@ func TestFormatDiff_Different(t *testing.T) {
 
 	diff := DiffVaults(vault1, vault2)
 	formatted := FormatDiff(diff, false)
-	
+
 	if !strings.Contains(formatted, "✗ Vaults differ:") {
 		t.Errorf("Expected difference message in formatted diff: %s", formatted)
 	}
@@ -357,7 +357,7 @@ func TestFormatDiff_WithColors(t *testing.T) {
 
 	diff := DiffVaults(vault1, vault2)
 	formatted := FormatDiff(diff, true)
-	
+
 	// Check for ANSI color codes
 	if !strings.Contains(formatted, "\033[31m") { // Red for error
 		t.Errorf("Expected color codes in formatted diff with colors enabled: %s", formatted)
@@ -433,7 +433,7 @@ func TestValidateVultFileFromPath_ValidFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get absolute path: %v", err)
 	}
-	
+
 	valid, err := ValidateVultFileFromPath(absPath)
 	if err != nil {
 		t.Errorf("Expected no error for valid vault file path, got: %v", err)

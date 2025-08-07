@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,8 +26,9 @@ import (
 //   - error: nil on success, or error describing serialization/format issues
 //
 // Usage:
-//   err := OutputResult(vaultInfo, "json", os.Stdout)
-//   err := OutputResult(diffData, "yaml", fileWriter)
+//
+//	err := OutputResult(vaultInfo, "json", os.Stdout)
+//	err := OutputResult(diffData, "yaml", fileWriter)
 func OutputResult(data interface{}, format string, out io.Writer) error {
 	switch format {
 	case "json":

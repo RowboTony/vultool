@@ -38,7 +38,7 @@ type VaultInfo struct {
 // KeyShareInfo contains information about a key share
 type KeyShareInfo struct {
 	PublicKey string `json:"public_key" yaml:"public_key"`
-	KeyType   string `json:"key_type" yaml:"key_type"` // ECDSA or EDDSA
+	KeyType   string `json:"key_type" yaml:"key_type"`                     // ECDSA or EDDSA
 	Keyshare  string `json:"keyshare,omitempty" yaml:"keyshare,omitempty"` // The actual keyshare data
 }
 
@@ -248,7 +248,6 @@ func GetKeySharesInfo(vaultInfo *VaultInfo) string {
 
 	return sb.String()
 }
-
 
 // VaultDiff represents differences between two vaults
 type VaultDiff struct {

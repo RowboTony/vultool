@@ -9,11 +9,11 @@ import (
 func TestGetSupportedChains(t *testing.T) {
 	chains := GetSupportedChains()
 	expectedChains := []SupportedChain{ChainBitcoin, ChainEthereum, ChainSolana, ChainThorChain}
-	
+
 	if len(chains) != len(expectedChains) {
 		t.Errorf("Expected %d chains, got %d", len(expectedChains), len(chains))
 	}
-	
+
 	for i, expected := range expectedChains {
 		if i >= len(chains) || chains[i] != expected {
 			t.Errorf("Expected chain %s at index %d, got %s", expected, i, chains[i])
@@ -23,21 +23,21 @@ func TestGetSupportedChains(t *testing.T) {
 
 func TestGetCommonDerivationPaths(t *testing.T) {
 	paths := GetCommonDerivationPaths()
-	
+
 	// Test that we have paths for all supported chains
 	expectedChains := []SupportedChain{ChainBitcoin, ChainEthereum, ChainSolana, ChainThorChain}
-	
+
 	for _, chain := range expectedChains {
 		chainPaths, exists := paths[chain]
 		if !exists {
 			t.Errorf("Missing derivation paths for chain: %s", chain)
 			continue
 		}
-		
+
 		if len(chainPaths) == 0 {
 			t.Errorf("Empty derivation paths for chain: %s", chain)
 		}
-		
+
 		// Test that each path has required fields
 		for i, path := range chainPaths {
 			if path.Path == "" {
@@ -54,13 +54,13 @@ func TestGetCommonDerivationPaths(t *testing.T) {
 			}
 		}
 	}
-	
+
 	// Test specific known paths
 	bitcoinPaths, exists := paths[ChainBitcoin]
 	if !exists {
 		t.Fatal("Bitcoin paths should exist")
 	}
-	
+
 	// Check that standard BIP-44 path exists
 	foundStandardPath := false
 	for _, path := range bitcoinPaths {
@@ -93,7 +93,7 @@ func TestValidateDerivationPath(t *testing.T) {
 		{"invalid", true, "invalid format"},
 		{"m/44'/0'", false, "shorter valid path"},
 	}
-	
+
 	for _, test := range tests {
 		err := ValidateDerivationPath(test.path)
 		if test.shouldError && err == nil {
@@ -111,7 +111,7 @@ func TestRecoverPrivateKeys_InvalidFiles(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error from invalid file paths")
 	}
-	
+
 	if !strings.Contains(err.Error(), "failed to parse vault file") {
 		t.Errorf("Expected 'failed to parse vault file' in error, got: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestRecoverPrivateKeys_InsufficientShares(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for insufficient shares")
 	}
-	
+
 	if !strings.Contains(err.Error(), "insufficient shares") {
 		t.Errorf("Expected 'insufficient shares' in error, got: %v", err)
 	}
@@ -135,7 +135,7 @@ func TestDeriveAddress_Stub(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error from stub implementation")
 	}
-	
+
 	// Should fail at vault parsing since we're using a non-existent file,
 	// but let's test with a more specific scenario
 	if !strings.Contains(err.Error(), "failed to parse vault file") {
@@ -150,14 +150,14 @@ func TestSupportedChainConstants(t *testing.T) {
 	// Test that chain constants have expected values
 	expectedChains := map[SupportedChain]string{
 		ChainBitcoin:   "bitcoin",
-		ChainEthereum:  "ethereum", 
+		ChainEthereum:  "ethereum",
 		ChainSolana:    "solana",
 		ChainThorChain: "thorchain",
 	}
-	
+
 	for chain, expectedValue := range expectedChains {
 		if string(chain) != expectedValue {
-			t.Errorf("Chain constant %s has unexpected value: expected %s, got %s", 
+			t.Errorf("Chain constant %s has unexpected value: expected %s, got %s",
 				chain, expectedValue, string(chain))
 		}
 	}
@@ -172,7 +172,7 @@ func TestRecoveredKeyStructure(t *testing.T) {
 		Address:    "test-address",
 		DerivePath: "m/44'/0'/0'/0/0",
 	}
-	
+
 	if key.Chain != ChainBitcoin {
 		t.Errorf("Expected chain %s, got %s", ChainBitcoin, key.Chain)
 	}
@@ -192,7 +192,7 @@ func TestDerivationPathStructure(t *testing.T) {
 		Description: "Test path",
 		Purpose:     "testing",
 	}
-	
+
 	if path.Path != "m/44'/0'/0'/0/0" {
 		t.Errorf("Expected path 'm/44'/0'/0'/0/0', got '%s'", path.Path)
 	}
@@ -208,7 +208,7 @@ func TestRecoverPrivateKeys_GG20Integration(t *testing.T) {
 		"../../test/fixtures/testGG20-part1of2.vult",
 		"../../test/fixtures/testGG20-part2of2.vult",
 	}
-	
+
 	// Skip if test files don't exist
 	for _, file := range vaultFiles {
 		if !fileExists(file) {
@@ -216,20 +216,20 @@ func TestRecoverPrivateKeys_GG20Integration(t *testing.T) {
 			return
 		}
 	}
-	
+
 	recoveredKeys, err := RecoverPrivateKeys(vaultFiles, 2, "")
 	if err != nil {
 		t.Fatalf("Recovery failed: %v", err)
 	}
-	
+
 	if len(recoveredKeys) == 0 {
 		t.Fatal("No keys recovered")
 	}
-	
+
 	// Validate that we get both ECDSA and EDDSA keys
 	foundBitcoin := false
 	foundSolana := false
-	
+
 	for _, key := range recoveredKeys {
 		// Validate required fields
 		if key.PrivateKey == "" {
@@ -241,7 +241,7 @@ func TestRecoverPrivateKeys_GG20Integration(t *testing.T) {
 		if key.DerivePath == "" {
 			t.Error("Derive path should not be empty")
 		}
-		
+
 		// Check chain-specific formats
 		switch key.Chain {
 		case ChainBitcoin:
@@ -262,7 +262,7 @@ func TestRecoverPrivateKeys_GG20Integration(t *testing.T) {
 			}
 		}
 	}
-	
+
 	if !foundBitcoin {
 		t.Error("Should recover Bitcoin key from GG20 test fixture")
 	}
@@ -277,7 +277,7 @@ func TestRecoverPrivateKeys_DKLSIntegration(t *testing.T) {
 		"../../test/fixtures/testDKLS-1of2.vult",
 		"../../test/fixtures/testDKLS-2of2.vult",
 	}
-	
+
 	// Skip if test files don't exist
 	for _, file := range vaultFiles {
 		if !fileExists(file) {
@@ -285,16 +285,16 @@ func TestRecoverPrivateKeys_DKLSIntegration(t *testing.T) {
 			return
 		}
 	}
-	
+
 	recoveredKeys, err := RecoverPrivateKeys(vaultFiles, 2, "")
 	if err != nil {
 		t.Fatalf("Recovery failed: %v", err)
 	}
-	
+
 	if len(recoveredKeys) == 0 {
 		t.Fatal("No keys recovered from DKLS vault")
 	}
-	
+
 	// DKLS vaults should also produce keys
 	for _, key := range recoveredKeys {
 		if key.PrivateKey == "" {
@@ -312,7 +312,7 @@ func TestValidateVaultCompatibility_Integration(t *testing.T) {
 		"../../test/fixtures/testGG20-part1of2.vult",
 		"../../test/fixtures/testDKLS-1of2.vult", // Different vault!
 	}
-	
+
 	// Skip if test files don't exist
 	for _, file := range vaultFiles {
 		if !fileExists(file) {
@@ -320,12 +320,12 @@ func TestValidateVaultCompatibility_Integration(t *testing.T) {
 			return
 		}
 	}
-	
+
 	_, err := RecoverPrivateKeys(vaultFiles, 2, "")
 	if err == nil {
 		t.Fatal("Expected error for incompatible vaults")
 	}
-	
+
 	if !strings.Contains(err.Error(), "compatibility check failed") {
 		t.Errorf("Expected compatibility check error, got: %v", err)
 	}
@@ -337,19 +337,19 @@ func TestParseKeyShareData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to parse key share data: %v", err)
 	}
-	
+
 	if shareData.Index != 1 {
 		t.Errorf("Expected index 1, got %d", shareData.Index)
 	}
-	
+
 	if len(shareData.Share) == 0 {
 		t.Error("Share data should not be empty")
 	}
-	
+
 	if shareData.PublicKey != "0267db81657a956f364167c3986a426b448a74ac0db2092f6665c4c202b37f6f1d" {
 		t.Errorf("Public key mismatch: %s", shareData.PublicKey)
 	}
-	
+
 	// Test with invalid hex
 	_, err = parseKeyShareData("invalid-hex", 1)
 	if err == nil {
@@ -363,22 +363,22 @@ func TestLagrangeInterpolation(t *testing.T) {
 		{Share: []byte{0x01, 0x02, 0x03}, Index: 1, PublicKey: "test1"},
 		{Share: []byte{0x04, 0x05, 0x06}, Index: 2, PublicKey: "test2"},
 	}
-	
+
 	// Import elliptic to get a proper curve
 	// Note: We can't import it at the top due to existing imports, so we'll handle the curve differently
 	result, err := lagrangeInterpolation(shares, nil) // This should handle nil curve gracefully
 	if err != nil {
 		t.Fatalf("Lagrange interpolation failed: %v", err)
 	}
-	
+
 	if result == nil {
 		t.Error("Result should not be nil")
 	}
-	
+
 	if result.Sign() == 0 {
 		t.Error("Result should not be zero")
 	}
-	
+
 	// Test with empty shares
 	_, err = lagrangeInterpolation([]KeyShareData{}, nil)
 	if err == nil {

@@ -26,41 +26,41 @@ const (
 	ChainDash        SupportedChain = "dash"
 	ChainDogecoin    SupportedChain = "dogecoin"
 	ChainZcash       SupportedChain = "zcash"
-	
+
 	// Ethereum and EVM-compatible chains
-	ChainEthereum    SupportedChain = "ethereum"
-	ChainArbitrum    SupportedChain = "arbitrum"
-	ChainAvalanche   SupportedChain = "avalanche"
-	ChainBase        SupportedChain = "base"
-	ChainBlast       SupportedChain = "blast"
-	ChainBSC         SupportedChain = "bsc"
-	ChainCronos      SupportedChain = "cronos"
-	ChainOptimism    SupportedChain = "optimism"
-	ChainPolygon     SupportedChain = "polygon"
-	ChainZkSync      SupportedChain = "zksync"
-	
+	ChainEthereum  SupportedChain = "ethereum"
+	ChainArbitrum  SupportedChain = "arbitrum"
+	ChainAvalanche SupportedChain = "avalanche"
+	ChainBase      SupportedChain = "base"
+	ChainBlast     SupportedChain = "blast"
+	ChainBSC       SupportedChain = "bsc"
+	ChainCronos    SupportedChain = "cronos"
+	ChainOptimism  SupportedChain = "optimism"
+	ChainPolygon   SupportedChain = "polygon"
+	ChainZkSync    SupportedChain = "zksync"
+
 	// Cosmos-based chains
-	ChainThorChain   SupportedChain = "thorchain"
-	
+	ChainThorChain SupportedChain = "thorchain"
+
 	// EdDSA-based chains
-	ChainSolana      SupportedChain = "solana"
-	ChainSUI         SupportedChain = "sui"
+	ChainSolana SupportedChain = "solana"
+	ChainSUI    SupportedChain = "sui"
 )
 
 // RecoveredKey represents a reconstructed private key in various formats
 type RecoveredKey struct {
-	Chain              SupportedChain `json:"chain"`
-	PrivateKey         string         `json:"private_key"`  // hex format
-	WIF                string         `json:"wif,omitempty"` // Bitcoin WIF format
-	Base58             string         `json:"base58,omitempty"` // Solana/THOR base58 format
-	Address            string         `json:"address"`
-	DerivePath         string         `json:"derive_path,omitempty"`
-	
+	Chain      SupportedChain `json:"chain"`
+	PrivateKey string         `json:"private_key"`      // hex format
+	WIF        string         `json:"wif,omitempty"`    // Bitcoin WIF format
+	Base58     string         `json:"base58,omitempty"` // Solana/THOR base58 format
+	Address    string         `json:"address"`
+	DerivePath string         `json:"derive_path,omitempty"`
+
 	// Wallet-compatible formats for EdDSA chains
-	SolanaSeedFormat   string         `json:"solana_seed_format,omitempty"`   // 32-byte seed only in base64 (some wallets prefer this)
-	SolanaWalletFormat string         `json:"solana_wallet_format,omitempty"` // 64-byte Ed25519 keypair in base64 for Solana
-	SolanaWalletJSON   string         `json:"solana_wallet_json,omitempty"`   // JSON array of 64 bytes for Phantom/Solflare
-	SuiWalletFormat    string         `json:"sui_wallet_format,omitempty"`    // 33-byte [0x00 + seed] in base64 for SUI
+	SolanaSeedFormat   string `json:"solana_seed_format,omitempty"`   // 32-byte seed only in base64 (some wallets prefer this)
+	SolanaWalletFormat string `json:"solana_wallet_format,omitempty"` // 64-byte Ed25519 keypair in base64 for Solana
+	SolanaWalletJSON   string `json:"solana_wallet_json,omitempty"`   // JSON array of 64 bytes for Phantom/Solflare
+	SuiWalletFormat    string `json:"sui_wallet_format,omitempty"`    // 33-byte [0x00 + seed] in base64 for SUI
 }
 
 // DerivationPath represents an HD derivation path
@@ -84,13 +84,13 @@ func RecoverPrivateKeys(vaultFiles []string, threshold int, password string) ([]
 	isGG20, err := CheckIfGG20Vault(vaultFiles[0], password)
 	if err == nil && isGG20 {
 		log.Printf("Detected GG20 vault - using proper GG20 recovery with validation")
-		
+
 		// Parse the original vault to get correct public keys for derivation
 		originalVault, err := vault.ParseVaultFileWithPassword(vaultFiles[0], password)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse original vault for derivation: %w", err)
 		}
-		
+
 		// Try ECDSA recovery using mobile-tss-lib compatible approach
 		log.Printf("Attempting ECDSA TSS reconstruction...")
 		ecdsaResult, err := ReconstructTSSKey(vaultFiles, password, TssKeyType(ECDSA))
@@ -121,7 +121,7 @@ func RecoverPrivateKeys(vaultFiles []string, threshold int, password string) ([]
 			}
 			recoveredKeys = append(recoveredKeys, recoveredEdDSAKeys...)
 		}
-		
+
 		// CRITICAL: Validate recovered addresses match list-addresses
 		if len(recoveredKeys) > 0 {
 			log.Printf("Total recovered keys before validation: %d", len(recoveredKeys))
@@ -134,11 +134,11 @@ func RecoverPrivateKeys(vaultFiles []string, threshold int, password string) ([]
 		} else {
 			log.Printf("⚠️ No keys were recovered at all!")
 		}
-		
+
 	} else {
 		// Fallback to old recovery method for non-GG20 vaults
 		log.Printf("Using legacy recovery method (not GG20 format)")
-		
+
 		// Try ECDSA recovery first
 		ecdsaResult, err := ReconstructTSSKey(vaultFiles, password, TssKeyType(ECDSA))
 		if err == nil && ecdsaResult != nil {
@@ -187,7 +187,7 @@ func RecoverPrivateKeys(vaultFiles []string, threshold int, password string) ([]
 }
 
 // DeriveAddress performs read-only HD derivation from a single vault share
-// This is a STUB implementation - will be completed in future iterations  
+// This is a STUB implementation - will be completed in future iterations
 func DeriveAddress(vaultFile string, derivePath string, chain SupportedChain, password string) (*RecoveredKey, error) {
 	// Parse the vault file first
 	vaultInfo, err := vault.ParseVaultFileWithPassword(vaultFile, password)
@@ -202,7 +202,7 @@ func DeriveAddress(vaultFile string, derivePath string, chain SupportedChain, pa
 
 	// TODO: Implement actual HD derivation logic
 	// For now, return a placeholder structure
-	
+
 	return nil, fmt.Errorf("HD derivation not yet implemented - this is a stub for v0.2 milestone")
 }
 
@@ -235,14 +235,14 @@ func ValidateDerivationPath(path string) error {
 	if path == "" {
 		return fmt.Errorf("derivation path cannot be empty")
 	}
-	
+
 	// Basic validation - should start with 'm/'
 	if len(path) < 2 || path[:2] != "m/" {
 		return fmt.Errorf("derivation path must start with 'm/'")
 	}
-	
+
 	// TODO: Add more comprehensive path validation
-	
+
 	return nil
 }
 
@@ -256,7 +256,7 @@ func GetSupportedChains() []SupportedChain {
 		ChainDash,
 		ChainDogecoin,
 		ChainZcash,
-		
+
 		// Ethereum and EVM-compatible chains
 		ChainEthereum,
 		ChainArbitrum,
@@ -268,10 +268,10 @@ func GetSupportedChains() []SupportedChain {
 		ChainOptimism,
 		ChainPolygon,
 		ChainZkSync,
-		
+
 		// Cosmos-based chains
 		ChainThorChain,
-		
+
 		// EdDSA-based chains
 		ChainSolana,
 		ChainSUI,
@@ -292,7 +292,7 @@ func validateVaultCompatibility(vaults []*vault.VaultInfo, threshold int) error 
 	}
 
 	first := vaults[0]
-	
+
 	// Check if all vaults have the same name
 	for i, v := range vaults {
 		if v.Name != first.Name {
@@ -376,7 +376,7 @@ func extractKeyShares(vaults []*vault.VaultInfo) ([]KeyShareData, []KeyShareData
 func parseKeyShareData(publicKey string, index int) (KeyShareData, error) {
 	// For this demonstration, we'll create a mock share based on the public key
 	// In reality, this would extract the actual secret share from the vault's keyshare field
-	
+
 	if publicKey == "" {
 		return KeyShareData{}, fmt.Errorf("empty public key")
 	}
@@ -477,7 +477,7 @@ func lagrangeInterpolation(shares []KeyShareData, curve elliptic.Curve) (*big.In
 
 	// For demonstration purposes, we'll create a deterministic "reconstruction"
 	// In a real TSS implementation, this would use proper Shamir secret sharing math
-	
+
 	// Combine all shares using XOR (this is NOT secure, just for demo)
 	var result []byte
 	for i, share := range shares {
@@ -493,7 +493,7 @@ func lagrangeInterpolation(shares []KeyShareData, curve elliptic.Curve) (*big.In
 
 	// Convert to big.Int
 	privKey := new(big.Int).SetBytes(result)
-	
+
 	// Only apply curve modulo if curve is provided
 	if curve != nil {
 		// Ensure the result is within the curve's field
@@ -598,19 +598,19 @@ func generateWIF(privateKeyBytes []byte) string {
 func generateWIFManual(privateKeyBytes []byte, net *chaincfg.Params, compressed bool) string {
 	// Add version byte (0x80 for mainnet)
 	versioned := append([]byte{0x80}, privateKeyBytes...)
-	
+
 	// Add compression flag if requested
 	if compressed {
 		versioned = append(versioned, 0x01)
 	}
-	
+
 	// Double SHA256 for checksum
 	hash1 := sha256.Sum256(versioned)
 	hash2 := sha256.Sum256(hash1[:])
-	
+
 	// Add first 4 bytes of hash as checksum
 	final := append(versioned, hash2[:4]...)
-	
+
 	// Encode with Base58Check
 	return encodeBase58(final)
 }
@@ -627,21 +627,21 @@ func generateBase58(data []byte) string {
 func encodeBase58(input []byte) string {
 	// Bitcoin base58 alphabet
 	alphabet := "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-	
+
 	if len(input) == 0 {
 		return ""
 	}
-	
+
 	// Count leading zeros
 	zeros := 0
 	for zeros < len(input) && input[zeros] == 0 {
 		zeros++
 	}
-	
+
 	// Encode the number
 	input = input[zeros:]
 	encoded := make([]byte, 0, len(input)*138/100+1) // log(256)/log(58), rounded up
-	
+
 	for _, b := range input {
 		carry := int(b)
 		for i := 0; i < len(encoded); i++ {
@@ -654,12 +654,12 @@ func encodeBase58(input []byte) string {
 			carry /= 58
 		}
 	}
-	
+
 	// Reverse the encoded slice
 	for i, j := 0, len(encoded)-1; i < j; i, j = i+1, j-1 {
 		encoded[i], encoded[j] = encoded[j], encoded[i]
 	}
-	
+
 	// Add leading '1's for leading zeros
 	result := make([]byte, zeros+len(encoded))
 	for i := 0; i < zeros; i++ {
@@ -668,7 +668,7 @@ func encodeBase58(input []byte) string {
 	for i := zeros; i < len(result); i++ {
 		result[i] = alphabet[encoded[i-zeros]]
 	}
-	
+
 	return string(result)
 }
 
@@ -680,13 +680,13 @@ func generateSolanaWalletFormat(privateKeyHex string, vaultPublicKeyHex string) 
 	if err != nil {
 		return "", fmt.Errorf("failed to decode private key: %w", err)
 	}
-	
+
 	// Convert hex public key to bytes (32 bytes)
 	publicKeyBytes, err := hex.DecodeString(vaultPublicKeyHex)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode public key: %w", err)
 	}
-	
+
 	// Ensure we have exactly 32 bytes for both
 	if len(privateKeyBytes) != 32 {
 		return "", fmt.Errorf("invalid private key length: expected 32 bytes, got %d", len(privateKeyBytes))
@@ -694,16 +694,16 @@ func generateSolanaWalletFormat(privateKeyHex string, vaultPublicKeyHex string) 
 	if len(publicKeyBytes) != 32 {
 		return "", fmt.Errorf("invalid public key length: expected 32 bytes, got %d", len(publicKeyBytes))
 	}
-	
+
 	// Create the 64-byte Ed25519 keypair: [private + public]
 	// This is what Solana wallets (Phantom, Solflare) expect
 	keypair := make([]byte, 64)
 	copy(keypair[:32], privateKeyBytes)
 	copy(keypair[32:], publicKeyBytes)
-	
+
 	// Encode to base64
 	base64Keypair := base64.StdEncoding.EncodeToString(keypair)
-	
+
 	return base64Keypair, nil
 }
 
@@ -715,13 +715,13 @@ func generateSolanaWalletJSON(privateKeyHex string, vaultPublicKeyHex string) (s
 	if err != nil {
 		return "", fmt.Errorf("failed to decode private key: %w", err)
 	}
-	
+
 	// Convert hex public key to bytes (32 bytes)
 	publicKeyBytes, err := hex.DecodeString(vaultPublicKeyHex)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode public key: %w", err)
 	}
-	
+
 	// Ensure we have exactly 32 bytes for both
 	if len(privateKeyBytes) != 32 {
 		return "", fmt.Errorf("invalid private key length: expected 32 bytes, got %d", len(privateKeyBytes))
@@ -729,12 +729,12 @@ func generateSolanaWalletJSON(privateKeyHex string, vaultPublicKeyHex string) (s
 	if len(publicKeyBytes) != 32 {
 		return "", fmt.Errorf("invalid public key length: expected 32 bytes, got %d", len(publicKeyBytes))
 	}
-	
+
 	// Create the 64-byte Ed25519 keypair: [private + public]
 	keypair := make([]byte, 64)
 	copy(keypair[:32], privateKeyBytes)
 	copy(keypair[32:], publicKeyBytes)
-	
+
 	// Convert to JSON array format: [61,220,129,202,...]
 	// This is what Phantom/Solflare expect when importing via GUI
 	jsonArray := "["
@@ -757,21 +757,21 @@ func generateSuiWalletFormat(privateKeyHex string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to decode private key: %w", err)
 	}
-	
+
 	// Ensure we have exactly 32 bytes
 	if len(privateKeyBytes) != 32 {
 		return "", fmt.Errorf("invalid private key length: expected 32 bytes, got %d", len(privateKeyBytes))
 	}
-	
+
 	// SUI expects [0x00 || 32-byte seed] format
 	// The 0x00 prefix indicates Ed25519 curve
 	suiKey := make([]byte, 33)
 	suiKey[0] = 0x00 // Ed25519 curve indicator
 	copy(suiKey[1:], privateKeyBytes)
-	
+
 	// Encode to base64 - this is what SUI wallets expect
 	base64Key := base64.StdEncoding.EncodeToString(suiKey)
-	
+
 	return base64Key, nil
 }
 
@@ -784,7 +784,7 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 	// CRITICAL: Use the same derivation functions as list-addresses for consistency!
 	// Instead of trusting the TSS result addresses, re-derive them from the private key
 	// This ensures we get the SAME addresses that list-addresses would show
-	
+
 	// Create a mock VaultInfo with the recovered keys to reuse existing derivation logic
 	// Use the original vault's public keys to ensure proper derivation
 	recoveryVault := &vault.VaultInfo{
@@ -792,24 +792,24 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 		HexChainCode:   tssResult.ChainCode,
 		PublicKeyEDDSA: "", // Will be set based on keyType
 	}
-	
+
 	// Set the appropriate public key based on the TSS key type being recovered
 	if keyType == ECDSA {
 		recoveryVault.PublicKeyECDSA = originalVault.PublicKeyECDSA
 	} else if keyType == EdDSA {
 		recoveryVault.PublicKeyEDDSA = originalVault.PublicKeyEDDSA
 	}
-	
+
 	// Get expected addresses using the SAME logic as list-addresses
 	expectedAddresses := vault.DeriveAddressesFromVault(recoveryVault)
-	
+
 	// Map expected addresses by chain name
 	expectedByChain := make(map[string]vault.VaultAddress)
 	for _, addr := range expectedAddresses {
 		chainKey := strings.ToLower(addr.Chain)
 		expectedByChain[chainKey] = addr
 	}
-	
+
 	// Convert to RecoveredKey format, using the proper addresses from centralized derivation
 	// IMPORTANT: These chain names must match the EXACT names used in DeriveAddressesFromVault
 	chainMappings := map[string]SupportedChain{
@@ -833,21 +833,21 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 		"solana":       ChainSolana,      // "Solana" from derivation (EdDSA)
 		"sui":          ChainSUI,         // "SUI" from derivation (EdDSA)
 	}
-	
+
 	for chainKey, addr := range expectedByChain {
 		if supportedChain, exists := chainMappings[chainKey]; exists {
 			// Only include chains that match the current key type being processed
 			isECDSAChain := isECDSAChain(supportedChain)
 			isEdDSAChain := isEdDSAChain(supportedChain)
-			
+
 			// Skip chains that don't match current TSS key type
 			if (keyType == ECDSA && !isECDSAChain) || (keyType == EdDSA && !isEdDSAChain) {
 				continue
 			}
-			
+
 			// Derive private key for this specific chain using the same derivation path
 			privateKeyHex := derivePrivateKeyForPath(tssResult.PrivateKeyHex, tssResult.ChainCode, addr.DerivePath)
-			
+
 			// CRITICAL: Use the original chain key (lowercase) to match validation expectations
 			// This ensures the recovered chain name matches exactly what the validation expects
 			recoveredKey := RecoveredKey{
@@ -856,42 +856,42 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 				Address:    addr.Address,
 				DerivePath: addr.DerivePath,
 			}
-			
-		// Generate wallet-compatible formats for EdDSA chains
-		if isEdDSAChain {
-			// Get the vault's EdDSA public key for correct wallet format generation
-			vaultEdDSAPublicKey := originalVault.PublicKeyEDDSA
-			
-			if supportedChain == ChainSolana {
-				// Generate the seed-only format (some wallets like this)
-				if seedBytes, err := hex.DecodeString(privateKeyHex); err == nil && len(seedBytes) == 32 {
-					recoveredKey.SolanaSeedFormat = base64.StdEncoding.EncodeToString(seedBytes)
-				}
-				
-				// Note: The full keypair formats below use TSS public key, not standard derivation
-				// These may not work in all wallets since TSS public key != ed25519.NewKeyFromSeed(seed).Public()
-				if solanaFormat, err := generateSolanaWalletFormat(privateKeyHex, vaultEdDSAPublicKey); err == nil {
-					recoveredKey.SolanaWalletFormat = solanaFormat
-				}
-				if solanaJSON, err := generateSolanaWalletJSON(privateKeyHex, vaultEdDSAPublicKey); err == nil {
-					recoveredKey.SolanaWalletJSON = solanaJSON
-				}
-			} else if supportedChain == ChainSUI {
-				if suiFormat, err := generateSuiWalletFormat(privateKeyHex); err == nil {
-					recoveredKey.SuiWalletFormat = suiFormat
+
+			// Generate wallet-compatible formats for EdDSA chains
+			if isEdDSAChain {
+				// Get the vault's EdDSA public key for correct wallet format generation
+				vaultEdDSAPublicKey := originalVault.PublicKeyEDDSA
+
+				if supportedChain == ChainSolana {
+					// Generate the seed-only format (some wallets like this)
+					if seedBytes, err := hex.DecodeString(privateKeyHex); err == nil && len(seedBytes) == 32 {
+						recoveredKey.SolanaSeedFormat = base64.StdEncoding.EncodeToString(seedBytes)
+					}
+
+					// Note: The full keypair formats below use TSS public key, not standard derivation
+					// These may not work in all wallets since TSS public key != ed25519.NewKeyFromSeed(seed).Public()
+					if solanaFormat, err := generateSolanaWalletFormat(privateKeyHex, vaultEdDSAPublicKey); err == nil {
+						recoveredKey.SolanaWalletFormat = solanaFormat
+					}
+					if solanaJSON, err := generateSolanaWalletJSON(privateKeyHex, vaultEdDSAPublicKey); err == nil {
+						recoveredKey.SolanaWalletJSON = solanaJSON
+					}
+				} else if supportedChain == ChainSUI {
+					if suiFormat, err := generateSuiWalletFormat(privateKeyHex); err == nil {
+						recoveredKey.SuiWalletFormat = suiFormat
+					}
 				}
 			}
-		}
-			
-		// Note: WIF generation skipped - hex private key format is sufficient
-			
+
+			// Note: WIF generation skipped - hex private key format is sufficient
+
 			keys = append(keys, recoveredKey)
 		}
 	}
-	
+
 	// EdDSA chains (Solana, SUI) are now handled above through centralized derivation
 	// No separate handling needed - they use the same derivation logic as ECDSA chains
-	
+
 	return keys
 }
 
@@ -928,6 +928,15 @@ func isECDSAChain(chain SupportedChain) bool {
 // isEdDSAChain determines if a chain uses EdDSA cryptography
 func isEdDSAChain(chain SupportedChain) bool {
 	return chain == ChainSolana || chain == ChainSUI
+}
+
+// CheckIfDKLSVault determines if a vault file is in DKLS format
+// NOTE: DKLS support is not yet implemented in this version
+// This is a stub that always returns false (assumes GG20 format)
+func CheckIfDKLSVault(inputFileName string, password string) (bool, error) {
+	// TODO: Implement proper DKLS vault detection when DKLS support is added
+	// For now, assume all vaults are GG20 format
+	return false, nil
 }
 
 // CheckIfGG20Vault determines if a vault file is in GG20 format
@@ -977,7 +986,7 @@ func ValidateGG20Recovery(vaultFiles []string, recoveredKeys []RecoveredKey, pas
 	var results []ValidationResult
 	validatedCount := 0
 	failedCount := 0
-	
+
 	for _, key := range recoveredKeys {
 		chainKey := strings.ToLower(string(key.Chain))
 		expectedAddr, exists := expectedByChain[chainKey]
@@ -1025,6 +1034,6 @@ func ValidateGG20Recovery(vaultFiles []string, recoveredKeys []RecoveredKey, pas
 	} else {
 		log.Printf("✅ GG20 recovery validation passed - all %d addresses match list-addresses", validatedCount)
 	}
-	
+
 	return nil
 }

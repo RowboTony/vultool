@@ -57,7 +57,7 @@ func deriveECDSAPathAddresses(pubKeyHex string, chainCodeHex string, pathsByChai
 	var results []PathAddress
 
 	// Define chain mappings for ECDSA chains
-	echainMappings := map[types.SupportedChain]struct{
+	echainMappings := map[types.SupportedChain]struct {
 		chain  string
 		ticker string
 	}{
@@ -256,7 +256,7 @@ func deriveBitcoinP2SHSegwitAddress(pubKey *secp256k1.PublicKey) string {
 	// P2SH-wrapped SegWit (P2WPKH-in-P2SH)
 	pubKeyCompressed := pubKey.SerializeCompressed()
 	pubkeyHash := hash160(pubKeyCompressed)
-	
+
 	// Create witness program: version + hash160
 	witnessProgram := append([]byte{0x00, 0x14}, pubkeyHash...)
 	// Hash the witness program for P2SH
