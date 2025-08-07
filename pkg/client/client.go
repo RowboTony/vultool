@@ -36,3 +36,8 @@ func IsValidVultFile(content string) (bool, error) {
 func ValidateVultFileFromPath(filePath string) (bool, error) {
 	return vault.ValidateVultFileFromPath(filePath)
 }
+
+// ParseVaultFromBytes parses vault content directly from bytes
+func ParseVaultFromBytes(data []byte) (*VaultInfo, error) {
+	return vault.ParseVaultFromBytes(data)
+}

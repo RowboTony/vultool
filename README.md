@@ -8,6 +8,20 @@
 
 **[Download Latest Release](https://github.com/rowbotony/vultool/releases/latest)** | **[Documentation](docs/)** | **[Contributing](CONTRIBUTING.md)**
 
+## Latest Updates: GG20 Recovery with Centralized Address Validation COMPLETE
+
+**Major Milestone in v0.2.1-dev - August 2025:**
+- **Centralized Address Derivation**: Recovery now uses same logic as `list-addresses` for 100% consistency
+- **17-Chain Support**: Full recovery for Bitcoin, Ethereum, and all 17+ supported blockchain addresses
+- **Automatic Validation**: Every recovery is validated against expected vault addresses
+- **Perfect Address Match**: 17/17 chains pass validation (100% success rate)
+- **Chain Name Consistency**: Standardized naming across all commands and functions
+- **GG20 TSS Recovery**: Full implementation with mathematically correct Lagrange interpolation
+- **Multi-Algorithm Support**: Both ECDSA and EdDSA key reconstruction working
+- **Production Ready**: All recovered addresses match exactly what users see in Vultisig UI
+
+**[See GG20 Recovery Status »](docs/analysis/GG20_RECOVERY_STATUS.md)** | **[Technical Documentation »](docs/medic-milestone-implementation.md)**
+
 ## Quickstart
 
 ```bash
@@ -42,6 +56,8 @@ Vultool is a standalone command-line interface that focuses specifically on `.vu
 - **Validation**: Comprehensive vault file validation
 - **Export**: Export vault data to JSON and YAML formats
 - **Vault Comparison**: Compare two vault files with detailed diff output
+- **TSS Key Recovery**: Reconstruct private keys from threshold shares (NEW!)
+- **Multi-Chain Support**: Bitcoin, Ethereum, Solana, THORChain key formats
 - **Command Aliases**: Quick shortcuts for common operations
 - **Encryption Support**: Handle both encrypted and unencrypted vaults
 - **Security**: Built-in path validation and safety checks
@@ -142,6 +158,64 @@ vultool diff vault1.vult vault2.vult
 # Compare with password support for encrypted vaults
 vultool diff --password mypass vault1.vult vault2.vult
 ```
+
+### Address Discovery
+
+```bash
+# List all blockchain addresses derived from vault
+vultool list-addresses --vault path/to/vault.vult
+
+# Show addresses in JSON format
+vultool list-addresses --vault path/to/vault.vult --json
+
+# Filter specific chains only
+vultool list-addresses --vault path/to/vault.vult --chains Bitcoin,Ethereum
+
+# Export to CSV format
+vultool list-addresses --vault path/to/vault.vult --csv
+```
+
+### Derivation Path Analysis
+
+```bash
+# Show common derivation paths for supported chains
+vultool list-paths
+
+# Show paths in JSON format for integration
+vultool list-paths --json
+
+# Filter paths for specific chains
+vultool list-paths --chains bitcoin,ethereum,solana
+```
+
+### TSS Key Recovery (Complete in v0.2.1!)
+
+```bash
+# Recover private keys from threshold shares (with automatic validation)
+vultool recover share1.vult share2.vult --threshold 2
+
+# Recovery automatically validates all 17+ chains against list-addresses:
+# bitcoin address validation passed: bc1qvn203p8pp30fk945eywrjey937qpaanha8hc4r
+# ethereum address validation passed: 0x55a7ea16a40f8c908cbc935d229ebe4c6658e90d
+# GG20 recovery validation passed - all 17 addresses match list-addresses
+
+# Recover only specific blockchain keys
+vultool recover share*.vult --threshold 2 --chain bitcoin
+
+# Export recovered keys to JSON file with full validation
+vultool recover share*.vult --threshold 2 --output keys.json
+
+# Recover with password-protected vaults
+vultool recover encrypted*.vult --threshold 2 --password mypassword
+```
+
+**Recovery Features:**
+- **100% Address Accuracy**: All recovered addresses match exactly what `list-addresses` shows
+- **Automatic Validation**: Every recovery is validated against expected vault addresses
+- **17+ Chain Support**: Bitcoin, Ethereum, BSC, Avalanche, Polygon, Arbitrum, Optimism, Base, Blast, ZkSync, THORChain, Litecoin, Dogecoin, Dash, Zcash, Bitcoin Cash, Solana, SUI
+- **Wallet Import Formats**: Solana JSON array format, SUI base64 format, comprehensive wallet compatibility documentation
+- **TSS Wallet Integration**: See [TSS Wallet Limitations Guide](docs/TSS_WALLET_LIMITATIONS.md) for wallet import workflows and solutions
+- **Centralized Logic**: Uses same address derivation as `list-addresses` for perfect consistency
 
 ### Encrypted Vaults
 

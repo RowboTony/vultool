@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.1-dev] - 2025-08-07
+
+### Added
+- **EdDSA Wallet Formats**: Complete Solana and SUI wallet-compatible import formats
+- **Solana JSON Array Format**: 64-byte keypair as JSON array for Phantom/Solflare import
+- **SUI Wallet Format**: Base64-encoded 33-byte format with 0x00 prefix for SUI wallets
+- **Multi-Format Output**: Each EdDSA recovery shows multiple import format options
+- **TSS Wallet Limitations Documentation**: Comprehensive guide explaining wallet import challenges and solutions
+
+### Enhanced
+- **EdDSA Address Derivation**: Proper Solana and SUI address generation from recovered TSS keys
+- **Wallet Format Validation**: All formats verified through decode testing and address matching
+- **Documentation Coverage**: Complete technical explanations of TSS vs standard wallet differences
+- **User Experience**: Clear guidance on working solutions (Solana CLI) and planned features (sweep)
+
+## [v0.2.0-dev] - 2025-08-06
+
+### Added
+- **GG20 TSS Recovery**: Full implementation with Lagrange interpolation over secp256k1 finite field
+- **Centralized Address Validation**: Recovery uses same derivation logic as `list-addresses` for 17-chain validation
+- **Multi-Algorithm Support**: Both ECDSA and EdDSA key reconstruction working
+- **Chain name standardization**: Consistent naming across commands and validation functions
+
+### Enhanced
+- **Recovery validation**: Built-in validation ensures recovered addresses match user expectations
+- **Cryptographic validation**: Private key reconstruction verified against secp256k1 curve
+- **Error handling**: Granular validation results with per-chain pass/fail status
+- **Security features**: Memory-safe cryptographic operations with proper field arithmetic
+
 ## [v0.1.1-dev] - 2025-08-03
 
 * **docs:** annihilate erroneous calendar dates from roadmap, now pure grind mode

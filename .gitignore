@@ -82,3 +82,11 @@ docs/private/
 # Debug files
 debug
 __debug_bin*
+debug_recovery
+verify_recovery
+debug-keyshares
+
+# Recovery tools and test binaries  
+cmd/debug_recovery/debug_recovery
+cmd/verify_recovery/verify_recovery
+cmd/debug-keyshares/debug-keyshares

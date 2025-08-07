@@ -5,9 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,7 +17,6 @@ import (
 	"golang.org/x/term"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gopkg.in/yaml.v3"
 )
 
 // VaultInfo contains parsed vault information
@@ -42,6 +39,7 @@ type VaultInfo struct {
 type KeyShareInfo struct {
 	PublicKey string `json:"public_key" yaml:"public_key"`
 	KeyType   string `json:"key_type" yaml:"key_type"` // ECDSA or EDDSA
+	Keyshare  string `json:"keyshare,omitempty" yaml:"keyshare,omitempty"` // The actual keyshare data
 }
 
 // ParseVaultFile parses a .vult file and returns vault information
@@ -129,6 +127,7 @@ func ParseVaultFileWithPassword(filePath, password string) (*VaultInfo, error) {
 		vaultInfo.KeyShares = append(vaultInfo.KeyShares, KeyShareInfo{
 			PublicKey: keyShare.PublicKey,
 			KeyType:   keyType,
+			Keyshare:  keyShare.Keyshare,
 		})
 	}
 
@@ -250,52 +249,15 @@ func GetKeySharesInfo(vaultInfo *VaultInfo) string {
 	return sb.String()
 }
 
-// ExportToJSON exports vault info to JSON format
-func ExportToJSON(vaultInfo *VaultInfo, writer io.Writer, pretty bool) error {
-	var data []byte
-	var err error
-
-	if pretty {
-		data, err = json.MarshalIndent(vaultInfo, "", "  ")
-	} else {
-		data, err = json.Marshal(vaultInfo)
-	}
-
-	if err != nil {
-		return fmt.Errorf("failed to marshal JSON: %w", err)
-	}
-
-	_, err = writer.Write(data)
-	if err != nil {
-		return fmt.Errorf("failed to write JSON: %w", err)
-	}
-
-	return nil
-}
-
-// ExportToYAML exports vault info to YAML format
-func ExportToYAML(vaultInfo *VaultInfo, writer io.Writer) error {
-	data, err := yaml.Marshal(vaultInfo)
-	if err != nil {
-		return fmt.Errorf("failed to marshal YAML: %w", err)
-	}
-
-	_, err = writer.Write(data)
-	if err != nil {
-		return fmt.Errorf("failed to write YAML: %w", err)
-	}
-
-	return nil
-}
 
 // VaultDiff represents differences between two vaults
 type VaultDiff struct {
-	Details        []string `yaml:"details"`
-	Same           bool     `yaml:"same"`
-	NameDiff       bool     `yaml:"name_different"`
-	EncryptionDiff bool     `yaml:"encryption_different"`
-	KeysDiff       bool     `yaml:"keys_different"`
-	SharesDiff     bool     `yaml:"shares_different"`
+	Details        []string `json:"details" yaml:"details"`
+	Same           bool     `json:"same" yaml:"same"`
+	NameDiff       bool     `json:"name_different" yaml:"name_different"`
+	EncryptionDiff bool     `json:"encryption_different" yaml:"encryption_different"`
+	KeysDiff       bool     `json:"keys_different" yaml:"keys_different"`
+	SharesDiff     bool     `json:"shares_different" yaml:"shares_different"`
 }
 
 // DiffVaults compares two vaults and returns differences
