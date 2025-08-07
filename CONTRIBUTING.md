@@ -24,6 +24,7 @@ This project adheres to a code of conduct that we expect all contributors to fol
 - **Go 1.21+** (tested with Go 1.21-1.23)
 - **Git** with submodule support
 - **Make** (optional, for development commands)
+- **golangci-lint** (required for `make ci-local` and `make lint`)
 
 ### Setup Development Environment
 
@@ -39,6 +40,12 @@ git submodule update
 # Install dependencies
 go mod tidy
 
+# Install development tools (required for linting)
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+
+# Ensure Go bin directory is in your PATH
+export PATH=$PATH:$(go env GOPATH)/bin
+
 # Build and test
 go build ./cmd/vultool
 ./vultool --version
@@ -49,12 +56,18 @@ go test ./...
 
 ### Development Philosophy
 
-Vultool follows a **CLI-first development approach**:
+Vultool follows a **fail-fast, explicit development approach** based on our [Development Principles](docs/DEVELOPMENT_PRINCIPLES.md):
 
-1. **Single Source of Truth**: All vault operations should be consistent between CLI and library usage
-2. **Security by Default**: Always validate inputs, sanitize outputs, and handle secrets securely
-3. **Cross-Platform**: Support Linux, macOS, and Windows equally
-4. **Minimal Dependencies**: Keep the dependency tree lean and well-maintained
+1. **No Silent Placeholders**: Never implement stubs that silently return fake data
+2. **Fail Fast with Explicit Errors**: Unimplemented features should return clear errors immediately
+3. **Feature Flags with Clear Status**: Use build tags and feature flags for incomplete functionality
+4. **Progressive Implementation with Validation**: Build incrementally with validation at each step
+5. **Single Source of Truth**: All vault operations should be consistent between CLI and library usage
+6. **Security by Default**: Always validate inputs, sanitize outputs, and handle secrets securely
+7. **Cross-Platform**: Support Linux, macOS, and Windows equally
+8. **Minimal Dependencies**: Keep the dependency tree lean and well-maintained
+
+**📖 Read the full [Development Principles](docs/DEVELOPMENT_PRINCIPLES.md) document for detailed examples and guidelines.**
 
 ## Development Workflow
 
@@ -183,6 +196,8 @@ func ParseVaultFile(filePath string) (*VaultInfo, error) {
 - [ ] **All tests pass** (`make ci-local`)
 - [ ] **Security scans pass** (gosec, govulncheck)
 - [ ] **Code is formatted** (gofmt, golangci-lint)
+- [ ] **No silent placeholders** (follows [Development Principles](docs/DEVELOPMENT_PRINCIPLES.md))
+- [ ] **Unimplemented features fail explicitly** (return errors or panic with clear messages)
 - [ ] **Documentation updated** (if applicable)
 - [ ] **CHANGELOG.md updated** (for user-facing changes)
 

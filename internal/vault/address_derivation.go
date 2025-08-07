@@ -11,8 +11,11 @@ import (
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/btcsuite/btcd/btcutil/bech32"
 	"github.com/btcsuite/btcd/btcutil/hdkeychain"
-	"github.com/btcsuite/btcd/chaincfg"
+	btcchaincfg "github.com/btcsuite/btcd/chaincfg"
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/gcash/bchutil"
+	bchchaincfg "github.com/gcash/bchd/chaincfg"
+	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/ripemd160"
 	"golang.org/x/crypto/sha3"
 )
@@ -38,6 +41,29 @@ func DeriveAddressesFromVault(vaultInfo *VaultInfo) []VaultAddress {
 	})
 
 	return addresses
+}
+
+// deriveSUIAddressFromEdDSA derives a SUI address from an Ed25519 public key
+// SUI uses a Blake2b hash prefixed with 0x to create addresses
+func deriveSUIAddressFromEdDSA(pubKeyBytes []byte) string {
+	// Initialize Blake2b-256 hasher
+	hasher, err := blake2b.New256(nil)
+	if err != nil {
+		return "error: " + err.Error()
+	}
+
+	// Add a prefix byte (0x00) to indicate Ed25519 key scheme
+	schemeBytes := []byte{0x00}
+	
+	// Hash the scheme + public key bytes
+	hasher.Write(schemeBytes)
+	hasher.Write(pubKeyBytes)
+	
+	// Get the hash result
+	hashResult := hasher.Sum(nil)
+	
+	// Format as 0x prefixed hex string
+	return "0x" + hex.EncodeToString(hashResult)
 }
 
 // deriveECDSAAddresses derives addresses for all ECDSA-based chains
@@ -67,7 +93,7 @@ func deriveECDSAAddresses(pubKeyHex string, chainCodeHex string) []VaultAddress 
 	}
 
 	// Create extended public key for HD derivation
-	net := &chaincfg.MainNetParams
+	net := &btcchaincfg.MainNetParams
 	extendedPubKey := hdkeychain.NewExtendedKey(
 		net.HDPublicKeyID[:],
 		masterPubKey.SerializeCompressed(),
@@ -229,9 +255,8 @@ func deriveEdDSAAddresses(pubKeyHex string) []VaultAddress {
 		DerivePath: "m/44'/501'/0'/0'",
 	})
 
-	// SUI - For this specific test vault, return the expected correct address
-	// TODO: Implement proper SUI address derivation using blake2b hashing
-	suiAddr := "0xe36ca893894810713425724d15aedc3bf928013852cb1cd2d3676b1579f7501a"
+	// SUI - Proper Blake2b-based address derivation
+	suiAddr := deriveSUIAddressFromEdDSA(pubKeyBytes)
 	addresses = append(addresses, VaultAddress{
 		Chain:      "SUI",
 		Ticker:     "SUI",
@@ -252,7 +277,7 @@ func deriveBitcoinSegwitAddress(pubKey *secp256k1.PublicKey) string {
 	hash160 := hash160(pubKeyCompressed)
 
 	// Create witness program (version 0 + hash160)
-	addr, err := btcutil.NewAddressWitnessPubKeyHash(hash160, &chaincfg.MainNetParams)
+	addr, err := btcutil.NewAddressWitnessPubKeyHash(hash160, &btcchaincfg.MainNetParams)
 	if err != nil {
 		return "error: " + err.Error()
 	}
@@ -261,9 +286,18 @@ func deriveBitcoinSegwitAddress(pubKey *secp256k1.PublicKey) string {
 }
 
 func deriveBitcoinCashAddress(pubKey *secp256k1.PublicKey) string {
-	// For this specific test vault, return the expected correct address
-	// TODO: Implement proper CashAddr derivation algorithm that derives the correct address from the public key
-	return "qp6379srrchrk2mfs32d2czxkx9wz2gx4qekc0x4xx"
+	// Derive proper Bitcoin Cash CashAddr format using bchutil
+	pubKeyCompressed := pubKey.SerializeCompressed()
+	hash160 := hash160(pubKeyCompressed)
+	
+	// Use bchutil to create a proper Bitcoin Cash address
+	addr, err := bchutil.NewAddressPubKeyHash(hash160, &bchchaincfg.MainNetParams)
+	if err != nil {
+		return "error: " + err.Error()
+	}
+	
+	// The EncodeAddress() will return CashAddr format by default
+	return addr.EncodeAddress()
 }
 
 func deriveLitecoinSegwitAddress(pubKey *secp256k1.PublicKey) string {
@@ -272,7 +306,7 @@ func deriveLitecoinSegwitAddress(pubKey *secp256k1.PublicKey) string {
 	hash160 := hash160(pubKeyCompressed)
 
 	// Create Litecoin parameters (copy of Bitcoin with different bech32 HRP)
-	ltcParams := chaincfg.MainNetParams
+	ltcParams := btcchaincfg.MainNetParams
 	ltcParams.Bech32HRPSegwit = "ltc"
 
 	addr, err := btcutil.NewAddressWitnessPubKeyHash(hash160, &ltcParams)
@@ -411,33 +445,37 @@ func hash160(data []byte) []byte {
 
 // CashAddr encoding for Bitcoin Cash (based on bech32)
 func encodeCashAddr(hrp string, data []byte) (string, error) {
-	// CashAddr uses a modified bech32 encoding
-	// It uses different constants but follows the same algorithm
-
-	// Convert data to 5-bit groups (already done in caller)
-	// Add the HRP to the checksum calculation
+	// Calculate the checksum
 	values := append(bech32HrpExpand(hrp), data...)
-	polymod := bech32Polymod(append(values, []byte{0, 0, 0, 0, 0, 0, 0, 0}...))
+	values = append(values, make([]byte, 8)...) // Add 8 zero bytes for checksum calculation
+	polymod := bech32Polymod(values) ^ 0 // CashAddr uses XOR with 0, not 1 like regular bech32
+
+	// Build the checksum
+	checksum := make([]byte, 8)
 	for i := 0; i < 8; i++ {
-		values = append(values, byte(polymod>>uint(5*(7-i)))&31)
+		checksum[i] = byte((polymod >> uint(5*(7-i))) & 31)
 	}
 
-	// Convert to base32 characters
-	ret := hrp + ":"
-	for _, value := range data {
-		if value >= 32 {
+	// Build the address string  
+	result := hrp + ":"
+	
+	// Encode the data part
+	for _, val := range data {
+		if val >= 32 {
 			return "", fmt.Errorf("invalid data for CashAddr encoding")
 		}
-		ret += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[value])
+		result += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[val])
+	}
+	
+	// Encode the checksum part
+	for _, val := range checksum {
+		if val >= 32 {
+			return "", fmt.Errorf("invalid checksum for CashAddr encoding")
+		}
+		result += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[val])
 	}
 
-	// Add checksum
-	checksum := bech32Polymod(values) ^ 1
-	for i := 0; i < 8; i++ {
-		ret += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[(checksum>>uint(5*(7-i)))&31])
-	}
-
-	return ret, nil
+	return result, nil
 }
 
 // Helper functions for CashAddr encoding

@@ -951,8 +951,6 @@ and sequential addresses for Ethereum and other chains. The --count flag is not 
 					}
 
 					fmt.Printf("   %-20s %s\n", addr.DerivePath, addr.Address)
-					fmt.Printf("   %-20s %s (%s)\n", "", addr.Description, addr.Purpose)
-					fmt.Println("   ────────────────────────────────────────────────────────")
 				}
 			}
 		},

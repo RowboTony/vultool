@@ -6,11 +6,11 @@
 
 **A standalone cross-platform Go CLI tool for managing `.vult` vault file operations, compatible with Vultisig security models.**
 
-**[Download Latest Release](https://github.com/rowbotony/vultool/releases/latest)** | **[Documentation](docs/)** | **[Contributing](CONTRIBUTING.md)**
+**[Download Latest Release](https://github.com/rowbotony/vultool/releases/latest)** | **[Documentation](docs/)** | **[Contributing](CONTRIBUTING.md)** | **[Implementation Status](docs/IMPLEMENTATION_STATUS.md)**
 
 ## Latest Updates: GG20 Recovery with Centralized Address Validation COMPLETE
 
-**Major Milestone in v0.2.1-dev - August 2025:**
+**Major Milestone in v0.2.0-dev - August 2025:**
 - **Centralized Address Derivation**: Recovery now uses same logic as `list-addresses` for 100% consistency
 - **17-Chain Support**: Full recovery for Bitcoin, Ethereum, and all 17+ supported blockchain addresses
 - **Automatic Validation**: Every recovery is validated against expected vault addresses
@@ -188,7 +188,7 @@ vultool list-paths --json
 vultool list-paths --chains bitcoin,ethereum,solana
 ```
 
-### TSS Key Recovery (Complete in v0.2.1!)
+### TSS Key Recovery (Complete in v0.2.0!)
 
 ```bash
 # Recover private keys from threshold shares (with automatic validation)
@@ -275,6 +275,12 @@ git submodule update
 
 # Install dependencies
 go mod tidy
+
+# Install development tools (required for linting and CI)
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+
+# Ensure Go bin directory is in your PATH (add to ~/.bashrc, ~/.zshrc, etc.)
+export PATH=$PATH:$(go env GOPATH)/bin
 
 # Build using make (Linux/macOS)
 make build

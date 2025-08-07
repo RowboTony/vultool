@@ -1,8 +1,6 @@
 module github.com/rowbotony/vultool
 
-go 1.23.2
-
-toolchain go1.23.4
+go 1.23.4
 
 require (
 	github.com/btcsuite/btcd v0.24.2
@@ -24,7 +22,11 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce // indirect
+	github.com/dchest/siphash v1.2.3 // indirect
 	github.com/decred/dcrd/dcrec/edwards/v2 v2.0.3 // indirect
+	github.com/gcash/bchd v0.21.1 // indirect
+	github.com/gcash/bchlog v0.0.0-20180913005452-b4f036f92fa6 // indirect
+	github.com/gcash/bchutil v0.0.0-20250514010653-ef9bffba99e1 // indirect
 	github.com/gogo/protobuf v1.3.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

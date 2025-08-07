@@ -19,7 +19,12 @@ Vultool uses a comprehensive CI/CD pipeline that ensures code quality, security,
 
 ## Local Development
 
+**Prerequisites for local CI**: Ensure `golangci-lint` is installed:
 ```bash
+# Install golangci-lint (required for make ci-local)
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+export PATH=$PATH:$(go env GOPATH)/bin
+
 # Run full CI locally
 make ci-local
 

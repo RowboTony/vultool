@@ -247,3 +247,15 @@ internal/recovery/
 ```
 
 This implementation provides a solid foundation for production TSS key recovery while maintaining security best practices and comprehensive error handling.
+
+## Acknowledgments & Project Inspiration
+
+The recovery feature in vultool was inspired by pioneering work in other open source projects. We gratefully acknowledge:
+
+- [`cmd/recovery-cli` in vultisig/mobile-tss-lib](https://github.com/vultisig/mobile-tss-lib/tree/main/cmd/recovery-cli):
+  Provided foundational CLI patterns and core recovery logic for threshold signature share reconstruction.
+
+- [`Vultisig-Share-Decoder` by SxMShaDoW](https://github.com/SxMShaDoW/Vultisig-Share-Decoder):
+  Served as an early reference implementation for decoding, validating, and reconstructing Vultisig vault shares.
+
+These projects laid important groundwork for secure, user-friendly key recovery tooling in the Vultisig ecosystem.
