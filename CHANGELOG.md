@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Known Issues
-- **Linting temporarily disabled in CI**: ~50+ linting warnings suppressed to maintain development velocity
-  - Will be addressed in v0.2.1-dev before pushing to origin
-  - Includes error handling, security warnings, and code quality improvements
+## [v0.2.1-dev] - 2025-08-08
+
+### Documentation
+- **`go install` limitation documented**: Updated installation instructions to clarify that `go install` will never work
+  - Go's security model prohibits `go install` on modules containing replace directives
+  - Cosmos/TSS ecosystem requires replace directives to resolve upstream dependency conflicts
+  - Clone-and-build is the standard workflow in Cosmos development
+- **README updated**: Professional explanation of ecosystem constraints and installation methods
+- **Installation clarity**: Removed misleading `go install` references from quickstart and documentation
+
+### Technical Notes
+- No code changes - this is purely a documentation and expectation management release
+- All functionality from v0.2.0-dev remains intact and working
+- Local builds via `git clone && make build` work perfectly
 
 ## [v0.2.0-dev] - 2025-08-07
 

@@ -25,14 +25,15 @@
 ## Quickstart
 
 ```bash
-# Install vultool
-go install github.com/rowbotony/vultool/cmd/vultool@latest
+# Clone and build vultool
+git clone https://github.com/rowbotony/vultool.git
+cd vultool && make build
 
 # Inspect a vault file (try with our test fixtures)
-vultool inspect -f test/fixtures/testGG20-part1of2.vult --summary
+./vultool inspect -f test/fixtures/testGG20-part1of2.vult --summary
 
 # Export vault metadata to JSON
-vultool inspect -f your-vault.vult --export vault-metadata.json
+./vultool inspect -f your-vault.vult --export vault-metadata.json
 ```
 
 **Sample Output:**
@@ -66,11 +67,14 @@ Vultool is a standalone command-line interface that focuses specifically on `.vu
 
 **Requirements:** Go 1.21+ (tested with Go 1.21-1.23)
 
-```bash
-# Install from source
-go install github.com/rowbotony/vultool/cmd/vultool@latest
+### ⚠️ Important: `go install` Not Supported
 
-# Or build locally
+**`go install` will never work** with vultool due to Go's security model. The Cosmos/TSS ecosystem requires replace directives to resolve upstream dependency conflicts, and Go prohibits `go install` on any module containing replace directives.
+
+### Clone and Build (Standard Workflow)
+
+```bash
+# Clone and build from source (recommended)
 git clone https://github.com/rowbotony/vultool.git
 cd vultool
 
@@ -91,8 +95,12 @@ go build -ldflags "-X main.version=$(cat VERSION)" -o vultool ./cmd/vultool
 go build -ldflags "-X main.version=$(Get-Content VERSION)" -o vultool.exe ./cmd/vultool
 
 # Verify installation
-vultool --version
+./vultool --version
 ```
+
+### Why Clone-and-Build?
+
+This is the **standard workflow** in Cosmos development. The ecosystem has well-known upstream dependency conflicts that require replace directives. Rather than fighting Go's security boundaries, we embrace the professional approach used throughout the Cosmos ecosystem.
 
 ## Usage
 
