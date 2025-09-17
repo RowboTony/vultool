@@ -1,6 +1,22 @@
-# vultool Documentation
+# vultool Documentation [DISCONTINUED]
 
-Welcome to the vultool documentation! This directory contains comprehensive guides for using, developing, and contributing to vultool.
+> **This project has been discontinued in favor of official Vultisig tools. See [official alternatives](#official-alternatives) below.**
+
+Welcome to the vultool documentation! This directory contains comprehensive guides and historical documentation for the discontinued vultool project.
+
+## Official Alternatives
+
+**Use these official Vultisig tools instead:**
+
+- **[vultisig-cli](https://github.com/vultisig/vultisig-cli)** - Comprehensive Rust CLI with MPC signing
+- **[vultisig-sdk](https://github.com/vultisig/vultisig-sdk)** - TypeScript SDK for developers  
+- **[vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder)** - Web-based recovery tool
+
+---
+
+## Historical Documentation
+
+*The following documentation is preserved for reference and educational purposes.*
 
 ## Documentation Index
 

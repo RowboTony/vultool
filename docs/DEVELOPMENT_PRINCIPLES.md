@@ -1,6 +1,8 @@
-# Development Principles
+# Development Principles [ARCHIVED]
 
-This document outlines the core development principles that guide vultool's implementation and all contributions to the project.
+> **This project has been discontinued. These principles are preserved for historical reference and may be valuable for other projects.**
+
+This document outlined the core development principles that guided vultool's implementation during its active development.
 
 ## Core Philosophy: No Silent Placeholders
 

@@ -1,12 +1,45 @@
-# vultool
+# ⚠️ vultool [DISCONTINUED]
+
+> **This project has been discontinued in favor of official Vultisig tools. Please use the [official alternatives](#official-alternatives) below.**
 
 [![CI](https://github.com/rowbotony/vultool/workflows/CI/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/ci.yml) [![Security](https://github.com/rowbotony/vultool/workflows/Security/badge.svg)](https://github.com/rowbotony/vultool/actions/workflows/security.yml) [![Go Version](https://img.shields.io/github/go-mod/go-version/rowbotony/vultool)](https://github.com/rowbotony/vultool/blob/main/go.mod) [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/rowbotony/vultool)](https://github.com/rowbotony/vultool/releases) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
---- 
+---
 
 **A standalone cross-platform Go CLI tool for managing `.vult` vault file operations, compatible with Vultisig security models.**
 
-**[Download Latest Release](https://github.com/rowbotony/vultool/releases/latest)** | **[Documentation](docs/)** | **[Contributing](CONTRIBUTING.md)** | **[Implementation Status](docs/IMPLEMENTATION_STATUS.md)** | **[Supported Chains](docs/SUPPORTED_CHAINS.md)**
+**This tool has been superseded by official Vultisig tools with superior functionality and active support.**
+
+## Official Alternatives
+
+**Use these official Vultisig tools instead:**
+
+### 🚀 [vultisig-cli](https://github.com/vultisig/vultisig-cli)
+Comprehensive Rust CLI with MPC signing capabilities
+- Full 2-of-2 threshold signature support
+- TypeScript integration packages
+- WebSocket daemon architecture
+- Production-ready with comprehensive documentation
+
+### 📚 [vultisig-sdk](https://github.com/vultisig/vultisig-sdk)
+TypeScript SDK for developers
+- Complete API for vault creation and management
+- Multi-chain support (40+ blockchains)
+- Fast and Secure vault modes
+- Full CI/CD implementation
+
+### 🔑 [vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder)
+Web-based recovery tool
+- GG20 and DKLS support
+- Private key reconstruction
+- User-friendly web interface
+- Equivalent functionality to vultool's recovery features
+
+---
+
+## Historical Documentation
+
+*The following documentation is preserved for reference and educational purposes.*
 
 ## Latest Updates: GG20 Recovery with Centralized Address Validation COMPLETE
 

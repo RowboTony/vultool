@@ -1,6 +1,8 @@
-# Implementation Status
+# Implementation Status [DISCONTINUED]
 
-This document tracks the implementation status of various features in vultool to ensure transparency about what's working, what's experimental, and what's not yet implemented.
+> **This project has been discontinued in favor of official Vultisig tools. See the main README for [official alternatives](../README.md#official-alternatives).**
+
+This document tracks the final implementation status of features in vultool for historical reference.
 
 ## Address Derivation Support
 
@@ -125,25 +127,13 @@ This project now follows strict anti-placeholder principles:
 - ✅ **Clear status**: This document tracks implementation status transparently
 - ✅ **Progressive implementation**: Features are built incrementally with validation
 
-## Future Roadmap
+## Final Status Summary
 
-### Short Term (Next Release)
-- [ ] DKLS recovery implementation
-- [ ] Enhanced error messages and validation
-- [ ] Performance optimizations
-- [ ] Additional test coverage
+Vultool achieved its core mission of understanding and documenting Vultisig's .vult file format and TSS recovery processes. The project is now discontinued as official Vultisig tools provide superior, production-ready alternatives:
 
-### Medium Term
-- [ ] Transaction signing capabilities
-- [ ] Vault creation functionality
-- [ ] Enhanced security auditing
-- [ ] Plugin architecture for new chains
-
-### Long Term
-- [ ] Swap/DeFi integration
-- [ ] GUI interface
-- [ ] Advanced key management
-- [ ] Multi-vault operations
+- **Completed Features**: .vult parsing, GG20 recovery, address derivation, 19-chain support
+- **Educational Value**: Technical analysis and documentation preserved for reference
+- **Superseded By**: Official vultisig-cli, vultisig-sdk, and vultisig-share-decoder
 
 ---
 

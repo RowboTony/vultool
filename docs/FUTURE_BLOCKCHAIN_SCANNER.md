@@ -1,8 +1,20 @@
-# Future Enhancement: Phase 2 Blockchain Scanner
+# Future Enhancement: Phase 2 Blockchain Scanner [DISCONTINUED]
+
+> **This enhancement will not be implemented. The project has been discontinued in favor of official Vultisig tools.**
 
 ## Overview
 
-This document outlines a future enhancement to vultool's recovery capabilities: automated blockchain scanning to detect funded addresses during gap limit recovery scenarios.
+~~This document outlined a planned enhancement to vultool's recovery capabilities: automated blockchain scanning to detect funded addresses during gap limit recovery scenarios.~~
+
+**Use official alternatives instead:**
+- **[vultisig-cli](https://github.com/vultisig/vultisig-cli)** provides comprehensive scanning capabilities
+- **[vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder)** includes recovery functionality
+
+---
+
+## Historical Planning Documentation
+
+*The following content is preserved for reference only.*
 
 ## Current State (Phase 1: Complete )
 

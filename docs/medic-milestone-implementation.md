@@ -1,8 +1,10 @@
-# Medic Milestone (v0.2) - TSS Key Recovery Implementation
+# Medic Milestone (v0.2) - TSS Key Recovery Implementation [FINAL]
+
+> **This was the final major milestone implemented before project discontinuation. For ongoing recovery functionality, use [vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder).**
 
 ## Overview
 
-The Medic milestone introduces advanced cryptographic recovery functionality to vultool, enabling users to reconstruct private keys from distributed threshold signature scheme (TSS) vault shares. This implementation provides the core functionality needed for emergency key recovery scenarios.
+The Medic milestone introduced advanced cryptographic recovery functionality to vultool, enabling users to reconstruct private keys from distributed threshold signature scheme (TSS) vault shares. This implementation provided the core functionality needed for emergency key recovery scenarios.
 
 ## Implemented Features
 
@@ -203,23 +205,15 @@ The implementation provides detailed error messages for common scenarios:
 - **Parsing Errors**: When vault files are corrupted or invalid
 - **Cryptographic Failures**: When reconstruction mathematics fail
 
-## Future Enhancements
+## Project Discontinuation
 
-### Planned Improvements
+The vultool project has been discontinued as official Vultisig tools now provide superior alternatives:
 
-1. **Real TSS Integration**: Replace demonstration math with production-grade TSS libraries
-2. **Hardware Security**: HSM and hardware wallet integration
-3. **Additional Curves**: Support for more elliptic curves and signature schemes
-4. **Advanced Validation**: Enhanced cryptographic verification of recovered keys
-5. **Audit Trails**: Logging and audit functionality for compliance scenarios
+- **[vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder)** - Production-ready recovery tool
+- **[vultisig-cli](https://github.com/vultisig/vultisig-cli)** - Comprehensive CLI with MPC signing
+- **[vultisig-sdk](https://github.com/vultisig/vultisig-sdk)** - Full TypeScript SDK
 
-### Integration with Mobile-TSS-Lib
-
-The current implementation provides the foundation for integration with Vultisig's production TSS library:
-
-- **Interface Compatibility**: Designed to work with `github.com/vultisig/mobile-tss-lib`
-- **DKLS23 Support**: Architecture supports both GG20 and DKLS23 protocols
-- **Share Format**: Compatible with Vultisig protobuf share formats
+The recovery functionality implemented in vultool served as valuable research that informed the development of these official tools.
 
 ## Testing
 

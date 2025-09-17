@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+*No further releases planned - project discontinued.*
+
+## [v0.2.2-final] - 2025-09-17 - FINAL RELEASE
+
+> **🚨 PROJECT DISCONTINUED**: This is the final release of vultool. Users should migrate to official Vultisig tools.
+
+### Official Alternatives
+- **[vultisig-cli](https://github.com/vultisig/vultisig-cli)** - Comprehensive Rust CLI with MPC signing
+- **[vultisig-sdk](https://github.com/vultisig/vultisig-sdk)** - TypeScript SDK for developers  
+- **[vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder)** - Web-based recovery tool
+
+### Fixed in Final Release
+- **GG20 Recovery Bug**: Fixed critical issue where recovery addresses didn't match `list-addresses` output
+  - Root cause: Recovery used different address derivation logic than inspection
+  - Solution: Centralized address derivation to ensure 100% consistency
+  - Validation: All 19 supported chains now pass automatic validation during recovery
+- **CI/CD Linting**: Temporarily disabled linting in CI to maintain development velocity
+  - ~50+ linting warnings identified and documented for future reference
+  - Security scans (gosec, govulncheck) continue to pass
+  - All functional tests remain passing
+
+### Documentation Updates
+- **Discontinuation notices**: Added to all major documentation files
+- **Official alternatives**: Clear migration path provided throughout docs
+- **Historical preservation**: Technical analysis and educational content preserved
+- **Roadmap obsolescence**: Future plans marked as discontinued with official tool references
+
+### Project Achievements
+- [X] **Reverse-engineered .vult file format**: Complete protobuf specification and parsing
+- [X] **GG20 TSS key recovery**: Mathematical correctness with Lagrange interpolation
+- [X] **19-chain address derivation**: Bitcoin, Ethereum, Solana, THORChain, and 15+ others
+- [X] **Comprehensive CI/CD**: Multi-platform builds, security scanning, automated releases
+- [X] **Educational documentation**: Deep technical analysis preserved for future reference
+
+### Migration Guide
+| vultool Feature | Official Alternative |
+|---|---|
+| `.vult` file inspection | [vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder) |
+| Key recovery | [vultisig-share-decoder](https://github.com/vultisig/community-tools/tree/main/recovery-tools/vultisig-share-decoder) |
+| CLI operations | [vultisig-cli](https://github.com/vultisig/vultisig-cli) |
+| SDK integration | [vultisig-sdk](https://github.com/vultisig/vultisig-sdk) |
+
+---
+
 ## [v0.2.1-dev] - 2025-08-08
 
 ### Documentation
