@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,6 +64,12 @@ func showFirstRunMessage() {
 }
 
 func main() {
+	// Default: silence standard library log output (debug only)
+	// Enable by setting VULTOOL_DEBUG=1 in the environment
+	if os.Getenv("VULTOOL_DEBUG") == "" {
+		log.SetOutput(io.Discard)
+	}
+
 	// Show welcome message for first-time users
 	showFirstRunMessage()
 
@@ -504,6 +512,7 @@ Only use this for legitimate recovery purposes in a secure environment.`,
 			outputFile, _ := cmd.Flags().GetString("output")
 			chainFilter, _ := cmd.Flags().GetString("chain")
 			useJSON, _ := cmd.Flags().GetBool("json")
+			verifyPriv, _ := cmd.Flags().GetBool("verify-private-keys")
 
 			// Validate threshold
 			if threshold <= 0 || threshold > len(args) {
@@ -544,6 +553,31 @@ Only use this for legitimate recovery purposes in a secure environment.`,
 					}
 				}
 				recoveredKeys = filtered
+			}
+
+			// Optional verification of private keys against vault addresses
+			if verifyPriv {
+				results, verr := recovery.VerifyRecoveredKeys(vaultFiles, recoveredKeys, password)
+				// Print concise per-chain report
+				failCount := 0
+				for _, r := range results {
+					if r.Skipped {
+						fmt.Printf("[SKIPPED] %s: %s\n", r.Chain, r.Error)
+						continue
+					}
+					if r.Passed {
+						fmt.Printf("[PASS] %s\n", r.Chain)
+					} else {
+						fmt.Printf("[FAIL] %s expected=%s computed=%s (%s)\n", r.Chain, r.Expected, r.Computed, r.Error)
+						failCount++
+					}
+				}
+				if verr != nil || failCount > 0 {
+					// Fail fast – do not print recovered keys
+					fmt.Printf("Verification failed for %d chain(s).\n", failCount)
+					return
+				}
+				fmt.Println("Verification passed for all checked chains.\n")
 			}
 
 			// Output results
@@ -595,6 +629,28 @@ Only use this for legitimate recovery purposes in a secure environment.`,
 
 					if key.WIF != "" {
 						fmt.Printf("  WIF:         %s\n", key.WIF)
+						// Always-on simple wallet hints for UTXO chains
+						switch string(key.Chain) {
+						case "bitcoin":
+							fmt.Printf("  Address Type: Native SegWit (P2WPKH)\n")
+							fmt.Printf("  Hint:        Import this WIF and choose Native SegWit to reproduce the bc1q address\n")
+							fmt.Printf("               Electrum example: p2wpkh:%s\n", key.WIF)
+						case "litecoin":
+							fmt.Printf("  Address Type: Native SegWit (ltc1…)\n")
+							fmt.Printf("  Hint:        Import this WIF and choose Native SegWit in your Litecoin wallet\n")
+						case "dogecoin":
+							fmt.Printf("  Address Type: Legacy (P2PKH)\n")
+							fmt.Printf("  Hint:        Import this WIF as Legacy in your Dogecoin wallet (D… address)\n")
+						case "dash":
+							fmt.Printf("  Address Type: Legacy (P2PKH)\n")
+							fmt.Printf("  Hint:        Import this WIF as Legacy in your Dash wallet (X… address)\n")
+						case "bitcoin-cash":
+							fmt.Printf("  Address Type: CashAddr (q…)\n")
+							fmt.Printf("  Hint:        Import this WIF; wallet will display a CashAddr (q…) address\n")
+						case "zcash":
+							fmt.Printf("  Address Type: Transparent (t1)\n")
+							fmt.Printf("  Hint:        Import this WIF as Transparent in your Zcash wallet (t1… address)\n")
+						}
 					}
 					if key.Base58 != "" {
 						fmt.Printf("  Base58:      %s\n", key.Base58)
@@ -612,6 +668,7 @@ Only use this for legitimate recovery purposes in a secure environment.`,
 	recoverCmd.Flags().String("output", "", "Output file for recovery results (JSON format)")
 	recoverCmd.Flags().String("chain", "", "Filter results for specific blockchain (bitcoin, ethereum, solana, thorchain)")
 	recoverCmd.Flags().Bool("json", false, "Output in JSON format")
+	recoverCmd.Flags().Bool("verify-private-keys", false, "Recompute addresses from emitted private keys and compare against vault")
 	if err := recoverCmd.MarkFlagRequired("threshold"); err != nil {
 		fmt.Printf("Error setting up recover CLI flags: %v\n", err)
 		os.Exit(1)

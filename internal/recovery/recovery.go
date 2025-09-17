@@ -781,75 +781,68 @@ func generateSuiWalletFormat(privateKeyHex string) (string, error) {
 func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType, originalVault *vault.VaultInfo) []RecoveredKey {
 	var keys []RecoveredKey
 
-	// CRITICAL: Use the same derivation functions as list-addresses for consistency!
-	// Instead of trusting the TSS result addresses, re-derive them from the private key
-	// This ensures we get the SAME addresses that list-addresses would show
-
-	// Create a mock VaultInfo with the recovered keys to reuse existing derivation logic
-	// Use the original vault's public keys to ensure proper derivation
+	// Use list-addresses derivation to get the canonical addresses for each chain
 	recoveryVault := &vault.VaultInfo{
-		PublicKeyECDSA: "", // Will be set based on keyType
+		PublicKeyECDSA: "",
 		HexChainCode:   tssResult.ChainCode,
-		PublicKeyEDDSA: "", // Will be set based on keyType
+		PublicKeyEDDSA: "",
 	}
-
-	// Set the appropriate public key based on the TSS key type being recovered
 	if keyType == ECDSA {
 		recoveryVault.PublicKeyECDSA = originalVault.PublicKeyECDSA
 	} else if keyType == EdDSA {
 		recoveryVault.PublicKeyEDDSA = originalVault.PublicKeyEDDSA
 	}
-
-	// Get expected addresses using the SAME logic as list-addresses
 	expectedAddresses := vault.DeriveAddressesFromVault(recoveryVault)
 
-	// Map expected addresses by chain name
-	expectedByChain := make(map[string]vault.VaultAddress)
+	// Helper to fetch the per-chain derived private key that matches the address we will output
+	getChainKeys := func(chainLower string) (ChainKeys, bool) {
+		switch chainLower {
+		case "bitcoin":
+			return tssResult.Addresses.Bitcoin, tssResult.Addresses.Bitcoin.PrivateKeyHex != ""
+		case "bitcoin-cash":
+			return tssResult.Addresses.BitcoinCash, tssResult.Addresses.BitcoinCash.PrivateKeyHex != ""
+		case "litecoin":
+			return tssResult.Addresses.Litecoin, tssResult.Addresses.Litecoin.PrivateKeyHex != ""
+		case "dogecoin":
+			return tssResult.Addresses.Dogecoin, tssResult.Addresses.Dogecoin.PrivateKeyHex != ""
+		case "dash":
+			return tssResult.Addresses.Dash, tssResult.Addresses.Dash.PrivateKeyHex != ""
+		case "zcash":
+			return tssResult.Addresses.Zcash, tssResult.Addresses.Zcash.PrivateKeyHex != ""
+		case "thorchain":
+			return tssResult.Addresses.THORChain, tssResult.Addresses.THORChain.PrivateKeyHex != ""
+		case "ethereum", "bsc", "avalanche", "polygon", "cronoschain", "arbitrum", "optimism", "base", "blast", "zksync":
+			return tssResult.Addresses.Ethereum, tssResult.Addresses.Ethereum.PrivateKeyHex != ""
+		case "solana":
+			return tssResult.Addresses.Solana, tssResult.Addresses.Solana.PrivateKeyHex != ""
+		case "sui":
+			return tssResult.Addresses.SUI, tssResult.Addresses.SUI.PrivateKeyHex != ""
+		default:
+			return ChainKeys{}, false
+		}
+	}
+
 	for _, addr := range expectedAddresses {
 		chainKey := strings.ToLower(addr.Chain)
-		expectedByChain[chainKey] = addr
-	}
 
-	// Convert to RecoveredKey format, using the proper addresses from centralized derivation
-	// IMPORTANT: These chain names must match the EXACT names used in DeriveAddressesFromVault
-	chainMappings := map[string]SupportedChain{
-		"bitcoin":      ChainBitcoin,     // "Bitcoin" from derivation
-		"bitcoin-cash": ChainBitcoinCash, // "Bitcoin-Cash" from derivation
-		"litecoin":     ChainLitecoin,    // "Litecoin" from derivation
-		"dogecoin":     ChainDogecoin,    // "Dogecoin" from derivation
-		"dash":         ChainDash,        // "Dash" from derivation
-		"zcash":        ChainZcash,       // "Zcash" from derivation
-		"ethereum":     ChainEthereum,    // "Ethereum" from derivation
-		"bsc":          ChainBSC,         // "BSC" from derivation
-		"avalanche":    ChainAvalanche,   // "Avalanche" from derivation
-		"polygon":      ChainPolygon,     // "Polygon" from derivation
-		"cronoschain":  ChainCronos,      // "CronosChain" from derivation
-		"arbitrum":     ChainArbitrum,    // "Arbitrum" from derivation
-		"optimism":     ChainOptimism,    // "Optimism" from derivation
-		"base":         ChainBase,        // "Base" from derivation
-		"blast":        ChainBlast,       // "Blast" from derivation
-		"zksync":       ChainZkSync,      // "Zksync" from derivation
-		"thorchain":    ChainThorChain,   // "THORChain" from derivation
-		"solana":       ChainSolana,      // "Solana" from derivation (EdDSA)
-		"sui":          ChainSUI,         // "SUI" from derivation (EdDSA)
-	}
+		// Filter by key type
+		isEd := chainKey == "solana" || chainKey == "sui"
+		if (keyType == ECDSA && isEd) || (keyType == EdDSA && !isEd) {
+			continue
+		}
 
-	for chainKey, addr := range expectedByChain {
-		if supportedChain, exists := chainMappings[chainKey]; exists {
-			// Only include chains that match the current key type being processed
-			isECDSAChain := isECDSAChain(supportedChain)
-			isEdDSAChain := isEdDSAChain(supportedChain)
+		// Prefer the per-chain derived key produced during TSS recovery.
+		// This ensures the printed private key actually corresponds to the printed address.
+		ck, ok := getChainKeys(chainKey)
+		privateKeyHex := ""
+		if ok {
+			privateKeyHex = ck.PrivateKeyHex
+		}
+		// Fallback: if for some reason we didn't produce a per-chain key, keep master (legacy behavior)
+		if privateKeyHex == "" {
+			privateKeyHex = derivePrivateKeyForPath(tssResult.PrivateKeyHex, tssResult.ChainCode, addr.DerivePath)
+		}
 
-			// Skip chains that don't match current TSS key type
-			if (keyType == ECDSA && !isECDSAChain) || (keyType == EdDSA && !isEdDSAChain) {
-				continue
-			}
-
-			// Derive private key for this specific chain using the same derivation path
-			privateKeyHex := derivePrivateKeyForPath(tssResult.PrivateKeyHex, tssResult.ChainCode, addr.DerivePath)
-
-			// CRITICAL: Use the original chain key (lowercase) to match validation expectations
-			// This ensures the recovered chain name matches exactly what the validation expects
 			recoveredKey := RecoveredKey{
 				Chain:      SupportedChain(chainKey), // Use chainKey instead of supportedChain constant
 				PrivateKey: privateKeyHex,
@@ -857,40 +850,36 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 				DerivePath: addr.DerivePath,
 			}
 
-			// Generate wallet-compatible formats for EdDSA chains
-			if isEdDSAChain {
-				// Get the vault's EdDSA public key for correct wallet format generation
-				vaultEdDSAPublicKey := originalVault.PublicKeyEDDSA
-
-				if supportedChain == ChainSolana {
-					// Generate the seed-only format (some wallets like this)
-					if seedBytes, err := hex.DecodeString(privateKeyHex); err == nil && len(seedBytes) == 32 {
-						recoveredKey.SolanaSeedFormat = base64.StdEncoding.EncodeToString(seedBytes)
-					}
-
-					// Note: The full keypair formats below use TSS public key, not standard derivation
-					// These may not work in all wallets since TSS public key != ed25519.NewKeyFromSeed(seed).Public()
-					if solanaFormat, err := generateSolanaWalletFormat(privateKeyHex, vaultEdDSAPublicKey); err == nil {
-						recoveredKey.SolanaWalletFormat = solanaFormat
-					}
-					if solanaJSON, err := generateSolanaWalletJSON(privateKeyHex, vaultEdDSAPublicKey); err == nil {
-						recoveredKey.SolanaWalletJSON = solanaJSON
-					}
-				} else if supportedChain == ChainSUI {
-					if suiFormat, err := generateSuiWalletFormat(privateKeyHex); err == nil {
-						recoveredKey.SuiWalletFormat = suiFormat
-					}
-				}
+			// Add WIF for UTXO chains to ease wallet imports
+			switch chainKey {
+			case "bitcoin":
+				recoveredKey.WIF = generateWIFFromPrivateKey(privateKeyHex)
+			case "litecoin", "dogecoin", "dash", "bitcoin-cash", "zcash":
+				recoveredKey.WIF = generateChainSpecificWIF(chainKey, privateKeyHex)
 			}
 
-			// Note: WIF generation skipped - hex private key format is sufficient
-
-			keys = append(keys, recoveredKey)
+		// Wallet-friendly formats for EdDSA chains
+		if isEd {
+			vaultEdDSAPublicKey := originalVault.PublicKeyEDDSA
+			if chainKey == "solana" {
+				if seedBytes, err := hex.DecodeString(privateKeyHex); err == nil && len(seedBytes) == 32 {
+					recoveredKey.SolanaSeedFormat = base64.StdEncoding.EncodeToString(seedBytes)
+				}
+				if solanaFormat, err := generateSolanaWalletFormat(privateKeyHex, vaultEdDSAPublicKey); err == nil {
+					recoveredKey.SolanaWalletFormat = solanaFormat
+				}
+				if solanaJSON, err := generateSolanaWalletJSON(privateKeyHex, vaultEdDSAPublicKey); err == nil {
+					recoveredKey.SolanaWalletJSON = solanaJSON
+				}
+			} else if chainKey == "sui" {
+				if suiFormat, err := generateSuiWalletFormat(privateKeyHex); err == nil {
+					recoveredKey.SuiWalletFormat = suiFormat
+				}
+			}
 		}
-	}
 
-	// EdDSA chains (Solana, SUI) are now handled above through centralized derivation
-	// No separate handling needed - they use the same derivation logic as ECDSA chains
+		keys = append(keys, recoveredKey)
+	}
 
 	return keys
 }
@@ -908,11 +897,49 @@ func shouldHaveWIF(chain SupportedChain) bool {
 		chain == ChainDogecoin || chain == ChainDash || chain == ChainZcash
 }
 
-// generateWIFFromPrivateKey generates WIF format from hex private key
-// Note: WIF generation not implemented as hex private keys are sufficient for all use cases
-// Users can convert hex to WIF using standard Bitcoin tools if needed
+// generateWIFFromPrivateKey generates a compressed mainnet WIF for Bitcoin
 func generateWIFFromPrivateKey(privateKeyHex string) string {
-	return "" // WIF not needed - hex private key is universal format
+	b, err := hex.DecodeString(privateKeyHex)
+	if err != nil || len(b) != 32 {
+		return ""
+	}
+	return generateWIFWithVersion(b, 0x80, true)
+}
+
+// generateChainSpecificWIF generates WIF strings for other UTXO chains
+func generateChainSpecificWIF(chainKey string, privateKeyHex string) string {
+	b, err := hex.DecodeString(privateKeyHex)
+	if err != nil || len(b) != 32 {
+		return ""
+	}
+	var version byte
+	switch chainKey {
+	case "litecoin":
+		version = 0xB0
+	case "dogecoin":
+		version = 0x9E
+	case "dash":
+		version = 0xCC
+	case "bitcoin-cash":
+		version = 0x80
+	case "zcash":
+		version = 0x80
+	default:
+		return ""
+	}
+	return generateWIFWithVersion(b, version, true)
+}
+
+// generateWIFWithVersion builds a WIF using a custom version byte
+func generateWIFWithVersion(privateKeyBytes []byte, version byte, compressed bool) string {
+	versioned := append([]byte{version}, privateKeyBytes...)
+	if compressed {
+		versioned = append(versioned, 0x01)
+	}
+	hash1 := sha256.Sum256(versioned)
+	hash2 := sha256.Sum256(hash1[:])
+	final := append(versioned, hash2[:4]...)
+	return encodeBase58(final)
 }
 
 // isECDSAChain determines if a chain uses ECDSA cryptography

@@ -6,11 +6,23 @@ The Medic milestone introduces advanced cryptographic recovery functionality to 
 
 ## Implemented Features
 
-### TSS Key Recovery (`recover` command)
+## TSS Key Recovery (`recover` command)
+
+### New: Private key verification (v1)
+- Flag: `--verify-private-keys`
+- What it does: recomputes each chain’s address from the emitted per‑chain private key and compares it to the vault’s ground‑truth address (same logic as `list-addresses`).
+- Coverage: ECDSA chains (Bitcoin family, THORChain, and all EVM chains).
+- EdDSA note: Solana/SUI are currently skipped; a future hardening option may add local Ed25519 sign/verify.
+- No network calls, no gas: this is entirely local cryptography.
+
+Future hardening (not implemented):
+- `--verify-sigs` to sign and locally verify a fixed message per chain for an extra check.
 
 The `recover` command combines threshold shares from multiple `.vult` files to reconstruct the original private key material. This functionality is critical for emergency scenarios where users need to recover access to their cryptocurrency wallets.
 
 #### Key Capabilities
+
+- Human-readable recover output now includes chain-specific WIF and a brief wallet import hint for UTXO chains (BTC, LTC, DOGE, DASH, BCH, ZEC). JSON/CSV outputs remain unchanged for clean programmatic consumption.
 
 - **Multi-Algorithm Support**: Handles both ECDSA (Bitcoin/Ethereum) and EDDSA (Solana) key reconstruction
 - **Threshold Validation**: Ensures sufficient shares are provided before attempting reconstruction
@@ -31,6 +43,8 @@ The recovery process follows these steps:
 6. **Format Conversion**: Convert keys to appropriate formats (WIF, base58, etc.)
 
 #### Security Features
+
+- To view internal debug logs during troubleshooting, set the environment variable `VULTOOL_DEBUG=1`. By default, logs are silenced to keep CLI output concise.
 
 - **Memory Safety**: Cryptographic material is handled securely in memory
 - **Validation Checks**: Multiple layers of validation prevent invalid reconstructions

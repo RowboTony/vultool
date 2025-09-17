@@ -65,6 +65,8 @@ Vultool is a standalone command-line interface that focuses specifically on `.vu
 
 ## Installation
 
+Tip for debugging: to enable verbose internal logs, set `VULTOOL_DEBUG=1` (default output is concise).
+
 **Requirements:** Go 1.21+ (tested with Go 1.21-1.23)
 
 ### ⚠️ Important: `go install` Not Supported
@@ -198,8 +200,16 @@ vultool list-paths --chains bitcoin,ethereum,solana
 
 ### TSS Key Recovery (Complete in v0.2.0!)
 
+Note: In human-readable output, UTXO chains (Bitcoin, Litecoin, Dogecoin, Dash, Zcash, Bitcoin Cash) include chain-specific WIF plus a brief wallet import hint. JSON/CSV outputs remain unchanged.
+
+EdDSA wallet imports (Solana/SUI): please read the limitations and workflows in [TSS Wallet Limitations](docs/TSS_WALLET_LIMITATIONS.md) — seed‑based wallets may reject TSS keypairs or show a different address.
+
+Note: In human-readable output, UTXO chains (Bitcoin, Litecoin, Dogecoin, Dash, Zcash, Bitcoin Cash) include chain-specific WIF plus a brief wallet import hint. JSON/CSV outputs remain unchanged.
+
 ```bash
 # Recover private keys from threshold shares (with automatic validation)
+# Optional: verify private keys match addresses
+vultool recover share1.vult share2.vult --threshold 2 --verify-private-keys
 vultool recover share1.vult share2.vult --threshold 2
 
 # Recovery automatically validates all 19 chains against list-addresses:
