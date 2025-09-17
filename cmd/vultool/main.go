@@ -577,7 +577,7 @@ Only use this for legitimate recovery purposes in a secure environment.`,
 					fmt.Printf("Verification failed for %d chain(s).\n", failCount)
 					return
 				}
-				fmt.Println("Verification passed for all checked chains.\n")
+				fmt.Println("Verification passed for all checked chains.")
 			}
 
 			// Output results
@@ -592,7 +592,11 @@ Only use this for legitimate recovery purposes in a secure environment.`,
 					fmt.Printf("Error creating output file: %v\n", err)
 					return
 				}
-				defer file.Close()
+				defer func() {
+					if err := file.Close(); err != nil {
+						fmt.Printf("Warning: Error closing file: %v\n", err)
+					}
+				}()
 
 				if err := util.OutputResult(recoveredKeys, "json", file); err != nil {
 					fmt.Printf("Error writing to output file: %v\n", err)
@@ -959,7 +963,12 @@ and sequential addresses for Ethereum and other chains. The --count flag is not 
 					fmt.Println("📋 Common HD Derivation Paths:")
 					fmt.Println()
 					for chain, paths := range allPaths {
-						fmt.Printf("🔗 %s:\n", strings.Title(string(chain)))
+						// Convert chain name to title case (replacing deprecated strings.Title)
+						chainName := string(chain)
+						if len(chainName) > 0 {
+							chainName = strings.ToUpper(chainName[:1]) + strings.ToLower(chainName[1:])
+						}
+						fmt.Printf("🔗 %s:\n", chainName)
 						for _, path := range paths {
 							fmt.Printf("   %-20s %s (%s)\n", path.Path, path.Description, path.Purpose)
 						}

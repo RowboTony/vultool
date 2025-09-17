@@ -6,23 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"io"
-	"os"
 
 	v1 "github.com/vultisig/commondata/go/vultisig/vault/v1"
 	"google.golang.org/protobuf/proto"
 )
-
-// readFileContent reads the content of a file
-func readFileContent(filePath string) ([]byte, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	return io.ReadAll(file)
-}
 
 // decryptVaultWithPassword decrypts an encrypted vault container using the provided password
 func decryptVaultWithPassword(vaultContainer *v1.VaultContainer, password string) (*v1.Vault, error) {

@@ -2,6 +2,10 @@
 
 .PHONY: build test clean install fixtures help
 
+# Tool versions
+LINT_VERSION ?= v1.66.0
+TOOLS_BIN := .tools/bin
+
 # Default target
 help:	## Show this help message
 	@echo "Available targets:"
@@ -63,8 +67,14 @@ deps:	## Download and tidy Go dependencies
 format:	## Format Go code
 	go fmt ./...
 
-lint:	## Run Go linter (requires golangci-lint)
-	golangci-lint run
+lint:	## Run Go linter
+	@echo "Running golangci-lint..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "❌ golangci-lint not found. Install it with: brew install golangci-lint"; \
+		exit 1; \
+	fi
+	@golangci-lint version
+	@golangci-lint run --timeout=5m
 
 # Development workflow
 dev: fixtures deps build demo	## Full development setup: fixtures + deps + build + demo
@@ -72,7 +82,7 @@ dev: fixtures deps build demo	## Full development setup: fixtures + deps + build
 # CI/CD related targets
 .PHONY: ci-local security-scan build-all-platforms setup-hooks validate-local coverage benchmark release-check clean-ci
 
-ci-local: deps format test security-scan build validate ## Run full CI suite locally (linting disabled temporarily)
+ci-local: deps format lint test security-scan build validate ## Run full CI suite locally
 
 security-scan: ## Run security scans (gosec + govulncheck)
 	@echo "Running gosec security scan..."

@@ -16,7 +16,7 @@ import (
 	bchchaincfg "github.com/gcash/bchd/chaincfg"
 	"github.com/gcash/bchutil"
 	"golang.org/x/crypto/blake2b"
-	"golang.org/x/crypto/ripemd160"
+	"golang.org/x/crypto/ripemd160" //nolint:staticcheck // Required for Bitcoin address derivation
 	"golang.org/x/crypto/sha3"
 )
 
@@ -441,90 +441,4 @@ func hash160(data []byte) []byte {
 	ripemd := ripemd160.New()
 	ripemd.Write(sha[:])
 	return ripemd.Sum(nil)
-}
-
-// CashAddr encoding for Bitcoin Cash (based on bech32)
-func encodeCashAddr(hrp string, data []byte) (string, error) {
-	// Calculate the checksum
-	values := append(bech32HrpExpand(hrp), data...)
-	values = append(values, make([]byte, 8)...) // Add 8 zero bytes for checksum calculation
-	polymod := bech32Polymod(values) ^ 0        // CashAddr uses XOR with 0, not 1 like regular bech32
-
-	// Build the checksum
-	checksum := make([]byte, 8)
-	for i := 0; i < 8; i++ {
-		checksum[i] = byte((polymod >> uint(5*(7-i))) & 31)
-	}
-
-	// Build the address string
-	result := hrp + ":"
-
-	// Encode the data part
-	for _, val := range data {
-		if val >= 32 {
-			return "", fmt.Errorf("invalid data for CashAddr encoding")
-		}
-		result += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[val])
-	}
-
-	// Encode the checksum part
-	for _, val := range checksum {
-		if val >= 32 {
-			return "", fmt.Errorf("invalid checksum for CashAddr encoding")
-		}
-		result += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[val])
-	}
-
-	return result, nil
-}
-
-// Helper functions for CashAddr encoding
-func bech32HrpExpand(hrp string) []byte {
-	ret := make([]byte, len(hrp)+1+len(hrp))
-	for i, c := range hrp {
-		ret[i] = byte(c) >> 5
-	}
-	ret[len(hrp)] = 0
-	for i, c := range hrp {
-		ret[len(hrp)+1+i] = byte(c) & 31
-	}
-	return ret
-}
-
-func bech32Polymod(values []byte) uint32 {
-	gen := []uint32{0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3}
-	chk := uint32(1)
-	for _, value := range values {
-		top := chk >> 25
-		chk = (chk&0x1ffffff)<<5 ^ uint32(value)
-		for i := 0; i < 5; i++ {
-			if (top>>uint(i))&1 == 1 {
-				chk ^= gen[i]
-			}
-		}
-	}
-	return chk
-}
-
-// convertBits converts between bit groups
-func convertBits(data []byte, fromBits, toBits uint8, pad bool) ([]byte, error) {
-	var result []byte
-	acc := uint32(0)
-	bits := uint8(0)
-
-	for _, b := range data {
-		acc = (acc << fromBits) | uint32(b)
-		bits += fromBits
-
-		for bits >= toBits {
-			bits -= toBits
-			result = append(result, byte(acc>>bits)&((1<<toBits)-1))
-		}
-	}
-
-	if pad && bits > 0 {
-		result = append(result, byte(acc<<(toBits-bits))&((1<<toBits)-1))
-	}
-
-	return result, nil
 }

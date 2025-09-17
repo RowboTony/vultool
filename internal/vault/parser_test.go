@@ -151,7 +151,7 @@ func TestParseVaultFile_InvalidPath(t *testing.T) {
 	} else {
 		dangerousPath = "/etc/passwd"
 	}
-	
+
 	_, err := ParseVaultFile(dangerousPath)
 	if err == nil {
 		t.Fatal("Expected error for unsafe path")
@@ -396,7 +396,7 @@ func TestValidateSafeOutputPath_DangerousPath(t *testing.T) {
 	} else {
 		dangerousPath = "/bin/malicious"
 	}
-	
+
 	err := ValidateSafeOutputPath(dangerousPath)
 	if err == nil {
 		t.Error("Expected error for dangerous output path")

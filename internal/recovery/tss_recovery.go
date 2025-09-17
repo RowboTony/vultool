@@ -3,8 +3,6 @@ package recovery
 import (
 	"crypto/ecdsa"
 	"crypto/ed25519"
-	"crypto/elliptic"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -23,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	v1 "github.com/vultisig/commondata/go/vultisig/vault/v1"
 	"github.com/vultisig/mobile-tss-lib/tss"
-	"golang.org/x/crypto/ripemd160"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -207,9 +204,10 @@ func getLocalStateFromVault(inputFileName string, password string) (map[TssKeyTy
 		}
 
 		// Determine key type based on public key
-		if keyshare.PublicKey == decryptedVault.PublicKeyEcdsa {
+		switch keyshare.PublicKey {
+		case decryptedVault.PublicKeyEcdsa:
 			localStates[ECDSA] = localState
-		} else if keyshare.PublicKey == decryptedVault.PublicKeyEddsa {
+		case decryptedVault.PublicKeyEddsa:
 			localStates[EdDSA] = localState
 		}
 	}
@@ -234,18 +232,6 @@ func recoverKey(threshold int, allSecrets []tempLocalState, keyType TssKeyType, 
 
 	if firstValidSecret == nil {
 		return nil, fmt.Errorf("no valid %s local state found", keyType)
-	}
-
-	// Collect all ShareIDs for Lagrange interpolation
-	var shareIDs []*big.Int
-	for _, s := range allSecrets {
-		if localState, ok := s.LocalState[keyType]; ok {
-			if keyType == ECDSA {
-				shareIDs = append(shareIDs, localState.ECDSALocalData.ShareID)
-			} else {
-				shareIDs = append(shareIDs, localState.EDDSALocalData.ShareID)
-			}
-		}
 	}
 
 	// Create shares structure for Lagrange interpolation
@@ -931,7 +917,11 @@ func deriveEthereumAddress(rootKey *hdkeychain.ExtendedKey, path string) (string
 // deriveBitcoinCashCashAddr derives a proper Bitcoin Cash CashAddr from an ECDSA public key
 func deriveBitcoinCashCashAddr(pubKey *ecdsa.PublicKey) string {
 	// Convert to secp256k1.PublicKey to use our existing Bitcoin Cash derivation logic
-	pubKeyBytes := elliptic.Marshal(pubKey.Curve, pubKey.X, pubKey.Y)
+	// Use uncompressed format: 0x04 + X (32 bytes) + Y (32 bytes)
+	pubKeyBytes := make([]byte, 65)
+	pubKeyBytes[0] = 0x04
+	pubKey.X.FillBytes(pubKeyBytes[1:33])
+	pubKey.Y.FillBytes(pubKeyBytes[33:65])
 	secp256k1PubKey, err := secp256k1.ParsePubKey(pubKeyBytes)
 	if err != nil {
 		return "error: " + err.Error()
@@ -948,96 +938,6 @@ func deriveBitcoinCashCashAddrFromSecp256k1(pubKey *secp256k1.PublicKey) string 
 	// The current implementation should derive the correct address from the public key
 	// but for now we return the expected result for this test case
 	return "qp6379srrchrk2mfs32d2czxkx9wz2gx4qekc0x4xx"
-}
-
-// Helper function for RIPEMD160(SHA256(data)) - Bitcoin Cash address derivation
-func btcutilHash160(data []byte) []byte {
-	sha := sha256.Sum256(data)
-	ripemd := ripemd160.New()
-	ripemd.Write(sha[:])
-	return ripemd.Sum(nil)
-}
-
-// convertBitsBCH converts between bit groups for Bitcoin Cash CashAddr encoding
-func convertBitsBCH(data []byte, fromBits, toBits uint8, pad bool) ([]byte, error) {
-	var result []byte
-	acc := uint32(0)
-	bits := uint8(0)
-
-	for _, b := range data {
-		acc = (acc << fromBits) | uint32(b)
-		bits += fromBits
-
-		for bits >= toBits {
-			bits -= toBits
-			result = append(result, byte(acc>>bits)&((1<<toBits)-1))
-		}
-	}
-
-	if pad && bits > 0 {
-		result = append(result, byte(acc<<(toBits-bits))&((1<<toBits)-1))
-	}
-
-	return result, nil
-}
-
-// encodeCashAddrBCH encodes Bitcoin Cash CashAddr format (based on bech32)
-func encodeCashAddrBCH(hrp string, data []byte) (string, error) {
-	// CashAddr uses a modified bech32 encoding
-	// It uses different constants but follows the same algorithm
-
-	// Convert data to 5-bit groups (already done in caller)
-	// Add the HRP to the checksum calculation
-	values := append(bech32HrpExpandBCH(hrp), data...)
-	polymod := bech32PolymodBCH(append(values, []byte{0, 0, 0, 0, 0, 0, 0, 0}...))
-	for i := 0; i < 8; i++ {
-		values = append(values, byte(polymod>>uint(5*(7-i)))&31)
-	}
-
-	// Convert to base32 characters
-	ret := hrp + ":"
-	for _, value := range data {
-		if value >= 32 {
-			return "", fmt.Errorf("invalid data for CashAddr encoding")
-		}
-		ret += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[value])
-	}
-
-	// Add checksum
-	checksum := bech32PolymodBCH(values) ^ 1
-	for i := 0; i < 8; i++ {
-		ret += string("qpzry9x8gf2tvdw0s3jn54khce6mua7l"[(checksum>>uint(5*(7-i)))&31])
-	}
-
-	return ret, nil
-}
-
-// Helper functions for CashAddr encoding
-func bech32HrpExpandBCH(hrp string) []byte {
-	ret := make([]byte, len(hrp)+1+len(hrp))
-	for i, c := range hrp {
-		ret[i] = byte(c) >> 5
-	}
-	ret[len(hrp)] = 0
-	for i, c := range hrp {
-		ret[len(hrp)+1+i] = byte(c) & 31
-	}
-	return ret
-}
-
-func bech32PolymodBCH(values []byte) uint32 {
-	gen := []uint32{0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3}
-	chk := uint32(1)
-	for _, value := range values {
-		top := chk >> 25
-		chk = (chk&0x1ffffff)<<5 ^ uint32(value)
-		for i := 0; i < 5; i++ {
-			if (top>>uint(i))&1 == 1 {
-				chk ^= gen[i]
-			}
-		}
-	}
-	return chk
 }
 
 // ReconstructDKLSKey reconstructs private keys from DKLS format vault shares

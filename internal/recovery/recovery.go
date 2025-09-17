@@ -1,17 +1,13 @@
 package recovery
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"log"
-	"math/big"
 	"strings"
 
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/rowbotony/vultool/internal/vault"
 )
 
@@ -285,344 +281,6 @@ type KeyShareData struct {
 	PublicKey string // Associated public key
 }
 
-// validateVaultCompatibility ensures all vaults belong to the same distributed key
-func validateVaultCompatibility(vaults []*vault.VaultInfo, threshold int) error {
-	if len(vaults) == 0 {
-		return fmt.Errorf("no vault files provided")
-	}
-
-	first := vaults[0]
-
-	// Check if all vaults have the same name
-	for i, v := range vaults {
-		if v.Name != first.Name {
-			return fmt.Errorf("vault %d has different name: '%s' vs '%s'", i+1, v.Name, first.Name)
-		}
-	}
-
-	// Check if all vaults have compatible public keys
-	for i, v := range vaults {
-		if v.PublicKeyECDSA != "" && first.PublicKeyECDSA != "" && v.PublicKeyECDSA != first.PublicKeyECDSA {
-			return fmt.Errorf("vault %d has incompatible ECDSA public key", i+1)
-		}
-		if v.PublicKeyEDDSA != "" && first.PublicKeyEDDSA != "" && v.PublicKeyEDDSA != first.PublicKeyEDDSA {
-			return fmt.Errorf("vault %d has incompatible EDDSA public key", i+1)
-		}
-	}
-
-	// Check if all vaults have the same hex chain code (for compatibility)
-	for i, v := range vaults {
-		if v.HexChainCode != first.HexChainCode {
-			return fmt.Errorf("vault %d has different hex chain code", i+1)
-		}
-	}
-
-	// Ensure we have enough unique local party keys
-	uniqueParties := make(map[string]bool)
-	for _, v := range vaults {
-		uniqueParties[v.LocalPartyKey] = true
-	}
-
-	if len(uniqueParties) < threshold {
-		return fmt.Errorf("insufficient unique parties: need at least %d, got %d", threshold, len(uniqueParties))
-	}
-
-	return nil
-}
-
-// extractKeyShares extracts and parses key shares from vault files
-func extractKeyShares(vaults []*vault.VaultInfo) ([]KeyShareData, []KeyShareData, error) {
-	var ecdsaShares []KeyShareData
-	var eddsaShares []KeyShareData
-
-	for i, vault := range vaults {
-		// Extract ECDSA shares if available
-		if vault.PublicKeyECDSA != "" {
-			for _, share := range vault.KeyShares {
-				if share.KeyType == "ECDSA" || share.PublicKey == vault.PublicKeyECDSA {
-					// Parse the key share data (assuming it's JSON or base64 encoded)
-					shareData, err := parseKeyShareData(share.PublicKey, i+1)
-					if err != nil {
-						return nil, nil, fmt.Errorf("failed to parse ECDSA share from vault %d: %w", i+1, err)
-					}
-					ecdsaShares = append(ecdsaShares, shareData)
-					break
-				}
-			}
-		}
-
-		// Extract EDDSA shares if available
-		if vault.PublicKeyEDDSA != "" {
-			for _, share := range vault.KeyShares {
-				if share.KeyType == "EDDSA" || share.PublicKey == vault.PublicKeyEDDSA {
-					// Parse the key share data (assuming it's JSON or base64 encoded)
-					shareData, err := parseKeyShareData(share.PublicKey, i+1)
-					if err != nil {
-						return nil, nil, fmt.Errorf("failed to parse EDDSA share from vault %d: %w", i+1, err)
-					}
-					eddsaShares = append(eddsaShares, shareData)
-					break
-				}
-			}
-		}
-	}
-
-	return ecdsaShares, eddsaShares, nil
-}
-
-// parseKeyShareData parses key share data from the vault
-// Note: This is a simplified implementation that treats public keys as share identifiers
-// In a real TSS system, this would parse the actual secret share data
-func parseKeyShareData(publicKey string, index int) (KeyShareData, error) {
-	// For this demonstration, we'll create a mock share based on the public key
-	// In reality, this would extract the actual secret share from the vault's keyshare field
-
-	if publicKey == "" {
-		return KeyShareData{}, fmt.Errorf("empty public key")
-	}
-
-	// Decode the hex public key to get some bytes to work with
-	pubKeyBytes, err := hex.DecodeString(publicKey)
-	if err != nil {
-		return KeyShareData{}, fmt.Errorf("failed to decode public key: %w", err)
-	}
-
-	// For demonstration purposes, we'll hash the public key to create a "share"
-	// This is NOT cryptographically sound - it's just for the stub implementation
-	hasher := sha256.New()
-	hasher.Write(pubKeyBytes)
-	hasher.Write([]byte(fmt.Sprintf("share-%d", index)))
-	shareBytes := hasher.Sum(nil)
-
-	return KeyShareData{
-		Share:     shareBytes,
-		Index:     index,
-		PublicKey: publicKey,
-	}, nil
-}
-
-// reconstructECDSAKey reconstructs an ECDSA private key from threshold shares
-func reconstructECDSAKey(shares []KeyShareData, threshold int, referenceVault *vault.VaultInfo) (*RecoveredKey, error) {
-	if len(shares) < threshold {
-		return nil, fmt.Errorf("insufficient ECDSA shares: need %d, got %d", threshold, len(shares))
-	}
-
-	// Use only the first 'threshold' number of shares
-	shares = shares[:threshold]
-
-	// Perform Lagrange interpolation to reconstruct the private key
-	// This is a simplified implementation for demonstration
-	privateKeyScalar, err := lagrangeInterpolation(shares, elliptic.P256())
-	if err != nil {
-		return nil, fmt.Errorf("failed to perform Lagrange interpolation: %w", err)
-	}
-
-	// Convert to hex string
-	privateKeyHex := hex.EncodeToString(privateKeyScalar.Bytes())
-
-	// Generate addresses for different chains
-	addresses, err := generateAddresses(privateKeyScalar, ChainBitcoin) // Default to Bitcoin for ECDSA
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate addresses: %w", err)
-	}
-
-	return &RecoveredKey{
-		Chain:      ChainBitcoin, // ECDSA keys are primarily used for Bitcoin
-		PrivateKey: privateKeyHex,
-		WIF:        addresses.wif,
-		Address:    addresses.address,
-		DerivePath: "m/44'/0'/0'/0/0", // Standard Bitcoin derivation path
-	}, nil
-}
-
-// reconstructEDDSAKey reconstructs an EDDSA private key from threshold shares
-func reconstructEDDSAKey(shares []KeyShareData, threshold int, referenceVault *vault.VaultInfo) (*RecoveredKey, error) {
-	if len(shares) < threshold {
-		return nil, fmt.Errorf("insufficient EDDSA shares: need %d, got %d", threshold, len(shares))
-	}
-
-	// Use only the first 'threshold' number of shares
-	shares = shares[:threshold]
-
-	// For EDDSA (Ed25519), we use a similar approach but with different curve parameters
-	// This is a simplified reconstruction for demonstration
-	privateKeyBytes, err := reconstructEd25519Key(shares)
-	if err != nil {
-		return nil, fmt.Errorf("failed to reconstruct Ed25519 key: %w", err)
-	}
-
-	// Convert to hex string
-	privateKeyHex := hex.EncodeToString(privateKeyBytes)
-
-	// Generate address (Solana uses Ed25519)
-	addresses, err := generateEd25519Addresses(privateKeyBytes, ChainSolana)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate Ed25519 addresses: %w", err)
-	}
-
-	return &RecoveredKey{
-		Chain:      ChainSolana, // EDDSA keys are primarily used for Solana
-		PrivateKey: privateKeyHex,
-		Base58:     addresses.base58,
-		Address:    addresses.address,
-		DerivePath: "m/44'/501'/0'/0'", // Standard Solana derivation path
-	}, nil
-}
-
-// lagrangeInterpolation performs Lagrange interpolation to reconstruct the secret
-func lagrangeInterpolation(shares []KeyShareData, curve elliptic.Curve) (*big.Int, error) {
-	if len(shares) == 0 {
-		return nil, fmt.Errorf("no shares provided")
-	}
-
-	// For demonstration purposes, we'll create a deterministic "reconstruction"
-	// In a real TSS implementation, this would use proper Shamir secret sharing math
-
-	// Combine all shares using XOR (this is NOT secure, just for demo)
-	var result []byte
-	for i, share := range shares {
-		if i == 0 {
-			result = make([]byte, len(share.Share))
-			copy(result, share.Share)
-		} else {
-			for j := 0; j < len(result) && j < len(share.Share); j++ {
-				result[j] ^= share.Share[j]
-			}
-		}
-	}
-
-	// Convert to big.Int
-	privKey := new(big.Int).SetBytes(result)
-
-	// Only apply curve modulo if curve is provided
-	if curve != nil {
-		// Ensure the result is within the curve's field
-		if privKey.Cmp(curve.Params().N) >= 0 {
-			privKey.Mod(privKey, curve.Params().N)
-		}
-	}
-
-	// Ensure it's not zero
-	if privKey.Sign() == 0 {
-		privKey.SetInt64(1) // Set to 1 if zero (for demo purposes)
-	}
-
-	return privKey, nil
-}
-
-// reconstructEd25519Key reconstructs an Ed25519 private key from shares
-func reconstructEd25519Key(shares []KeyShareData) ([]byte, error) {
-	if len(shares) == 0 {
-		return nil, fmt.Errorf("no shares provided")
-	}
-
-	// Similar simplified reconstruction for Ed25519
-	var result []byte
-	for i, share := range shares {
-		if i == 0 {
-			result = make([]byte, 32) // Ed25519 private keys are 32 bytes
-			if len(share.Share) >= 32 {
-				copy(result, share.Share[:32])
-			} else {
-				copy(result, share.Share)
-			}
-		} else {
-			limit := len(result)
-			if len(share.Share) < limit {
-				limit = len(share.Share)
-			}
-			for j := 0; j < limit; j++ {
-				result[j] ^= share.Share[j]
-			}
-		}
-	}
-
-	return result, nil
-}
-
-// AddressSet contains addresses in different formats
-type AddressSet struct {
-	address string
-	wif     string
-	base58  string
-}
-
-// generateAddresses generates addresses for ECDSA keys
-func generateAddresses(privateKey *big.Int, chain SupportedChain) (*AddressSet, error) {
-	// Create ECDSA private key
-	privKey := &ecdsa.PrivateKey{
-		PublicKey: ecdsa.PublicKey{
-			Curve: elliptic.P256(),
-		},
-		D: privateKey,
-	}
-	privKey.PublicKey.X, privKey.PublicKey.Y = privKey.PublicKey.Curve.ScalarBaseMult(privateKey.Bytes())
-
-	// For demonstration, create mock addresses
-	// In reality, this would use proper address generation for each blockchain
-	addressHash := sha256.Sum256(elliptic.Marshal(privKey.PublicKey.Curve, privKey.PublicKey.X, privKey.PublicKey.Y))
-	address := fmt.Sprintf("1%s", hex.EncodeToString(addressHash[:20])) // Mock Bitcoin address
-
-	// Generate WIF (Wallet Import Format) for Bitcoin
-	wif := generateWIF(privateKey.Bytes())
-
-	return &AddressSet{
-		address: address,
-		wif:     wif,
-	}, nil
-}
-
-// generateEd25519Addresses generates addresses for Ed25519 keys
-func generateEd25519Addresses(privateKey []byte, chain SupportedChain) (*AddressSet, error) {
-	// For demonstration, create mock Solana address
-	// In reality, this would use proper Ed25519 public key derivation
-	addressHash := sha256.Sum256(privateKey)
-	address := hex.EncodeToString(addressHash[:32]) // Mock Solana address
-
-	// Generate base58 encoding for Solana
-	base58Key := generateBase58(privateKey)
-
-	return &AddressSet{
-		address: address,
-		base58:  base58Key,
-	}, nil
-}
-
-// generateWIF creates a Bitcoin Wallet Import Format string
-// This creates a proper Base58Check-encoded WIF that can be imported into Bitcoin wallets
-func generateWIF(privateKeyBytes []byte) string {
-	return "WIF:" + generateWIFManual(privateKeyBytes, &chaincfg.MainNetParams, true)
-}
-
-// generateWIFManual creates WIF manually using Base58Check encoding
-func generateWIFManual(privateKeyBytes []byte, net *chaincfg.Params, compressed bool) string {
-	// Add version byte (0x80 for mainnet)
-	versioned := append([]byte{0x80}, privateKeyBytes...)
-
-	// Add compression flag if requested
-	if compressed {
-		versioned = append(versioned, 0x01)
-	}
-
-	// Double SHA256 for checksum
-	hash1 := sha256.Sum256(versioned)
-	hash2 := sha256.Sum256(hash1[:])
-
-	// Add first 4 bytes of hash as checksum
-	final := append(versioned, hash2[:4]...)
-
-	// Encode with Base58Check
-	return encodeBase58(final)
-}
-
-// generateBase58 creates a base58 representation
-// This is a simplified implementation for demonstration
-func generateBase58(data []byte) string {
-	// For demo purposes, just return a prefixed hex representation
-	// Real base58 encoding would use the Bitcoin base58 alphabet
-	return "B58:" + hex.EncodeToString(data)
-}
-
 // encodeBase58 encodes a byte slice to base58 using Bitcoin's alphabet
 func encodeBase58(input []byte) string {
 	// Bitcoin base58 alphabet
@@ -787,9 +445,10 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 		HexChainCode:   tssResult.ChainCode,
 		PublicKeyEDDSA: "",
 	}
-	if keyType == ECDSA {
+	switch keyType {
+	case ECDSA:
 		recoveryVault.PublicKeyECDSA = originalVault.PublicKeyECDSA
-	} else if keyType == EdDSA {
+	case EdDSA:
 		recoveryVault.PublicKeyEDDSA = originalVault.PublicKeyEDDSA
 	}
 	expectedAddresses := vault.DeriveAddressesFromVault(recoveryVault)
@@ -843,25 +502,26 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 			privateKeyHex = derivePrivateKeyForPath(tssResult.PrivateKeyHex, tssResult.ChainCode, addr.DerivePath)
 		}
 
-			recoveredKey := RecoveredKey{
-				Chain:      SupportedChain(chainKey), // Use chainKey instead of supportedChain constant
-				PrivateKey: privateKeyHex,
-				Address:    addr.Address,
-				DerivePath: addr.DerivePath,
-			}
+		recoveredKey := RecoveredKey{
+			Chain:      SupportedChain(chainKey), // Use chainKey instead of supportedChain constant
+			PrivateKey: privateKeyHex,
+			Address:    addr.Address,
+			DerivePath: addr.DerivePath,
+		}
 
-			// Add WIF for UTXO chains to ease wallet imports
-			switch chainKey {
-			case "bitcoin":
-				recoveredKey.WIF = generateWIFFromPrivateKey(privateKeyHex)
-			case "litecoin", "dogecoin", "dash", "bitcoin-cash", "zcash":
-				recoveredKey.WIF = generateChainSpecificWIF(chainKey, privateKeyHex)
-			}
+		// Add WIF for UTXO chains to ease wallet imports
+		switch chainKey {
+		case "bitcoin":
+			recoveredKey.WIF = generateWIFFromPrivateKey(privateKeyHex)
+		case "litecoin", "dogecoin", "dash", "bitcoin-cash", "zcash":
+			recoveredKey.WIF = generateChainSpecificWIF(chainKey, privateKeyHex)
+		}
 
 		// Wallet-friendly formats for EdDSA chains
 		if isEd {
 			vaultEdDSAPublicKey := originalVault.PublicKeyEDDSA
-			if chainKey == "solana" {
+			switch chainKey {
+			case "solana":
 				if seedBytes, err := hex.DecodeString(privateKeyHex); err == nil && len(seedBytes) == 32 {
 					recoveredKey.SolanaSeedFormat = base64.StdEncoding.EncodeToString(seedBytes)
 				}
@@ -871,7 +531,7 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 				if solanaJSON, err := generateSolanaWalletJSON(privateKeyHex, vaultEdDSAPublicKey); err == nil {
 					recoveredKey.SolanaWalletJSON = solanaJSON
 				}
-			} else if chainKey == "sui" {
+			case "sui":
 				if suiFormat, err := generateSuiWalletFormat(privateKeyHex); err == nil {
 					recoveredKey.SuiWalletFormat = suiFormat
 				}
@@ -889,12 +549,6 @@ func convertTSSToRecoveredKeys(tssResult *TSSRecoveryResult, keyType TssKeyType,
 // This is correct behavior for MPC systems where private key shares are never derived
 func derivePrivateKeyForPath(masterPrivateKeyHex, chainCodeHex, derivePath string) string {
 	return masterPrivateKeyHex
-}
-
-// shouldHaveWIF determines if a chain should have WIF format private key
-func shouldHaveWIF(chain SupportedChain) bool {
-	return chain == ChainBitcoin || chain == ChainBitcoinCash || chain == ChainLitecoin ||
-		chain == ChainDogecoin || chain == ChainDash || chain == ChainZcash
 }
 
 // generateWIFFromPrivateKey generates a compressed mainnet WIF for Bitcoin
@@ -940,21 +594,6 @@ func generateWIFWithVersion(privateKeyBytes []byte, version byte, compressed boo
 	hash2 := sha256.Sum256(hash1[:])
 	final := append(versioned, hash2[:4]...)
 	return encodeBase58(final)
-}
-
-// isECDSAChain determines if a chain uses ECDSA cryptography
-func isECDSAChain(chain SupportedChain) bool {
-	return chain == ChainBitcoin || chain == ChainBitcoinCash || chain == ChainLitecoin ||
-		chain == ChainDash || chain == ChainDogecoin || chain == ChainZcash ||
-		chain == ChainEthereum || chain == ChainArbitrum || chain == ChainAvalanche ||
-		chain == ChainBase || chain == ChainBlast || chain == ChainBSC ||
-		chain == ChainCronos || chain == ChainOptimism || chain == ChainPolygon ||
-		chain == ChainZkSync || chain == ChainThorChain
-}
-
-// isEdDSAChain determines if a chain uses EdDSA cryptography
-func isEdDSAChain(chain SupportedChain) bool {
-	return chain == ChainSolana || chain == ChainSUI
 }
 
 // CheckIfDKLSVault determines if a vault file is in DKLS format
@@ -1009,8 +648,7 @@ func ValidateGG20Recovery(vaultFiles []string, recoveredKeys []RecoveredKey, pas
 		expectedByChain[chainKey] = addr.Address
 	}
 
-	// Validate each recovered key and collect results
-	var results []ValidationResult
+	// Validate each recovered key
 	validatedCount := 0
 	failedCount := 0
 
@@ -1019,34 +657,14 @@ func ValidateGG20Recovery(vaultFiles []string, recoveredKeys []RecoveredKey, pas
 		expectedAddr, exists := expectedByChain[chainKey]
 		if !exists {
 			log.Printf("Warning: No expected address found for chain %s", key.Chain)
-			results = append(results, ValidationResult{
-				Chain:     string(key.Chain),
-				Passed:    false,
-				Recovered: key.Address,
-				Expected:  "(not found)",
-				Error:     "chain not in expected addresses",
-			})
 			continue
 		}
 
 		if key.Address != expectedAddr {
 			log.Printf("❌ %s address validation FAILED: recovered=%s, expected=%s", key.Chain, key.Address, expectedAddr)
-			results = append(results, ValidationResult{
-				Chain:     string(key.Chain),
-				Passed:    false,
-				Recovered: key.Address,
-				Expected:  expectedAddr,
-				Error:     "address mismatch",
-			})
 			failedCount++
 		} else {
 			log.Printf("✅ %s address validation passed: %s", key.Chain, key.Address)
-			results = append(results, ValidationResult{
-				Chain:     string(key.Chain),
-				Passed:    true,
-				Recovered: key.Address,
-				Expected:  expectedAddr,
-			})
 			validatedCount++
 		}
 	}

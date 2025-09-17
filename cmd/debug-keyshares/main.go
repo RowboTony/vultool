@@ -1,12 +1,8 @@
 package main
 
 import (
-	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/rowbotony/vultool/internal/vault"
 )
@@ -68,36 +64,4 @@ func debugVaultWithKeyshares(filePath, password string) {
 
 	// We'll need to actually get the raw keyshare data first
 	// This requires modifying the parser
-}
-
-func tryDecodeAsJSON(data string) {
-	decoded, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return
-	}
-
-	var result interface{}
-	if err := json.Unmarshal(decoded, &result); err == nil {
-		pretty, _ := json.MarshalIndent(result, "", "  ")
-		fmt.Printf("Decoded as JSON:\n%s\n", pretty)
-	}
-}
-
-func tryDecodeAsHex(data string) {
-	if strings.HasPrefix(strings.ToLower(data), "0x") {
-		data = data[2:]
-	}
-
-	decoded, err := hex.DecodeString(data)
-	if err == nil && len(decoded) > 0 {
-		fmt.Printf("Decoded as hex (%d bytes):\n", len(decoded))
-		fmt.Printf("First 32 bytes: %x\n", decoded[:min(32, len(decoded))])
-	}
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

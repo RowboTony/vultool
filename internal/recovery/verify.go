@@ -13,7 +13,7 @@ import (
 	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 	bchchaincfg "github.com/gcash/bchd/chaincfg"
 	"github.com/gcash/bchutil"
-	"golang.org/x/crypto/ripemd160"
+	"golang.org/x/crypto/ripemd160" //nolint:staticcheck // Required for Bitcoin address derivation
 	"golang.org/x/crypto/sha3"
 
 	"github.com/rowbotony/vultool/internal/vault"

@@ -6,7 +6,7 @@ require (
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/btcutil v1.1.5
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0
-	github.com/ethereum/go-ethereum v1.13.12
+	github.com/ethereum/go-ethereum v1.13.15
 	github.com/gcash/bchd v0.21.1
 	github.com/gcash/bchutil v0.0.0-20250514010653-ef9bffba99e1
 	github.com/spf13/cobra v1.9.1
